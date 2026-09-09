@@ -27,3 +27,8 @@ Thumbs.db
 
 # Logs
 *.log
+# Machine-local secrets & state
+agent_id.txt
+migration/local_embed_token.txt
+migration/tools_insert.sql
+migration/lifeos_wf_10786_latest.json

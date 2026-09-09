@@ -2,511 +2,1148 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LifeOS — Personal Management Dashboard</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="assets/tailwind.js"></script>
+<script src="assets/chart.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 *{font-family:'Inter',sans-serif}body{background:#f0f2f5}
 .sidebar-link{transition:all .2s}.sidebar-link:hover{background:#1e3a5f}.sidebar-link.active{background:#1a5276;border-left:3px solid #3498db}
 .card{box-shadow:0 1px 3px rgba(0,0,0,.1);transition:box-shadow .2s}.card:hover{box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.card[onclick]{cursor:pointer}.card[onclick]:active{transform:scale(.98);transition:transform .1s}
 .screen{display:none}.screen.active{display:block}
 .badge-overdue{background:#e74c3c;color:#fff}.badge-due{background:#f39c12;color:#fff}.badge-paid{background:#27ae60;color:#fff}.badge-upcoming{background:#3498db;color:#fff}
 .tab-active{border-bottom:3px solid #1a5276;color:#1a5276;font-weight:600}
 input,select,textarea{transition:border-color .2s}input:focus,select:focus,textarea:focus{border-color:#3498db;outline:none;box-shadow:0 0 0 2px rgba(52,152,219,.15)}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#bdc3c7;border-radius:3px}
+.toast{position:fixed;top:20px;right:20px;z-index:999;padding:12px 20px;border-radius:8px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);animation:slideIn .3s ease}
+.toast-success{background:#27ae60;color:#fff}.toast-error{background:#e74c3c;color:#fff}.toast-info{background:#3498db;color:#fff}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.loading{display:inline-block;width:20px;height:20px;border:3px solid #e0e0e0;border-top:3px solid #1a5276;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:40px;color:#999}
+.empty-state svg{width:48px;height:48px;margin:0 auto 12px;opacity:.3}
+/* MOBILE */
+.mobile-menu-btn{display:none;align-items:center;justify-content:center;width:40px;height:40px;background:#1a5276;color:#fff;border-radius:8px;cursor:pointer;border:none;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+@media(max-width:768px){
+  /* Layout shell */
+  .sidebar{position:fixed;left:-280px;top:0;height:100vh;width:260px;z-index:200;transition:left .3s ease;box-shadow:4px 0 16px rgba(0,0,0,.2)}
+  .sidebar.open{left:0}.main,main{margin-left:0!important;width:100%}
+  body{overflow:auto;-webkit-text-size-adjust:100%}
+  #app{height:100dvh}
+
+  /* Mobile menu button always visible + clear the sticky header behind it */
+  .mobile-menu-btn{display:flex!important}
+  main > div:first-child{padding-left:56px!important}
+  #header-search{display:none}
+
+  /* Grids collapse progressively */
+  .grid-cols-4{grid-template-columns:repeat(2,1fr)!important}
+  .grid-cols-3{grid-template-columns:repeat(1,1fr)!important}
+  .grid-cols-2{grid-template-columns:1fr!important}
+  .grid-cols-7{grid-template-columns:repeat(7,minmax(28px,1fr))!important;gap:2px!important;font-size:11px!important}
+  .gap-6{gap:.75rem!important}.gap-4{gap:.75rem!important}.mb-6{margin-bottom:.9rem!important}
+
+  /* Spacing & type scale down */
+  .p-6,.p-5{padding:1rem!important}
+  .px-6{padding-left:1rem!important;padding-right:1rem!important}
+  h1[id="page-title"]{font-size:15px!important}
+  .text-xl{font-size:17px!important}
+  .card{border-radius:10px}
+
+  /* Tables scroll horizontally inside their card instead of overflowing page */
+  table{font-size:12px;display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+  th,td{padding:8px 10px!important}
+
+  /* Buttons & inputs comfortable for touch */
+  button,input,select,textarea{font-size:16px!important}
+  input,select,textarea{min-height:42px}
+  button{min-height:40px}
+
+  /* Stacked flex rows (page headers with action buttons) */
+  .flex.justify-between.items-center{flex-wrap:wrap;gap:.5rem}
+
+  /* Charts keep a readable height on small screens */
+  canvas{max-height:220px!important;width:100%!important}
+
+  /* Toast full-width-ish on mobile */
+  .toast{left:12px;right:12px;top:64px;text-align:center}
+}
+
+/* RESPONSIVE POLISH */
+@media(max-width:768px){
+  .sidebar{width:min(280px,85vw)}
+  .mobile-menu-btn{top:calc(env(safe-area-inset-top,0px) + 12px);left:calc(env(safe-area-inset-left,0px) + 12px)}
+  .toast{top:calc(env(safe-area-inset-top,0px) + 64px)}
+  body.sidebar-lock{overflow:hidden}
+  .sidebar-link:active{background:#1a5276}
+  .sidebar-link{padding-top:.65rem!important;padding-bottom:.65rem!important} /* bigger touch targets */
+}
+@media(max-width:360px){
+  .grid-cols-4{grid-template-columns:1fr!important}
+  h1[id="page-title"]{font-size:14px!important}
+}
+</style>
 </style>
 </head>
 <body class="h-screen overflow-hidden">
-<div class="flex h-screen">
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0d2745] to-[#1a5276]">
+<div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+<div class="text-center mb-8">
+<div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-3xl font-bold text-white mx-auto mb-4">L</div>
+<h2 class="text-2xl font-bold text-gray-800">LifeOS</h2>
+<p class="text-gray-500 text-sm mt-1">Your personal operating system</p>
+</div>
+<div id="login-form" class="space-y-4">
+<div><label class="text-sm font-medium text-gray-700">Email</label><input id="login-email" type="email" placeholder="you@example.com" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Password</label><input id="login-password" type="password" placeholder="••••••••" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<button id="btn-login" class="w-full bg-[#1a5276] text-white py-2.5 rounded-lg font-medium hover:bg-[#0d2745] transition">Sign In</button>
+<p class="text-center text-sm text-gray-500 mt-4">Don't have an account? <a href="#" onclick="toggleRegister()" class="text-blue-600 hover:underline">Sign up</a></p>
+</div>
+<div id="register-form" class="space-y-4 hidden">
+<div><label class="text-sm font-medium text-gray-700">Name</label><input id="reg-name" type="text" placeholder="Your name" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Email</label><input id="reg-email" type="email" placeholder="you@example.com" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Password</label><input id="reg-password" type="password" placeholder="••••••••" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<button id="btn-register" class="w-full bg-[#1a5276] text-white py-2.5 rounded-lg font-medium hover:bg-[#0d2745] transition">Create Account</button>
+<p class="text-center text-sm text-gray-500 mt-4">Already have an account? <a href="#" onclick="toggleRegister()" class="text-blue-600 hover:underline">Sign in</a></p>
+</div>
+</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="flex h-screen hidden">
+<!-- MOBILE BTN -->
+<button class="mobile-menu-btn fixed top-3 left-3" onclick="toggleSidebar()" style="z-index:250">☰</button>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:150"></div>
 <!-- SIDEBAR -->
-<aside class="w-64 bg-[#0d2745] text-white flex flex-col flex-shrink-0 overflow-y-auto">
+<aside class="sidebar w-64 bg-[#0d2745] text-white flex flex-col flex-shrink-0 overflow-y-auto" id="sidebar">
 <div class="p-5 border-b border-[#1e3a5f]"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-xl font-bold">L</div><div><div class="font-bold text-lg">LifeOS</div><div class="text-xs text-blue-300">Personal Management</div></div></div></div>
 <nav class="flex-1 py-2">
 <div class="px-4 py-2 text-xs text-blue-300 uppercase tracking-wider">Overview</div>
-<a href="#" onclick="showScreen('dashboard')" class="sidebar-link active flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-dashboard"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Dashboard</a>
-<a href="#" onclick="showScreen('calendar')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-calendar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Calendar</a>
-<a href="#" onclick="showScreen('search')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-search"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>Search</a>
+<a href="#" onclick="showScreen('dashboard')" class="sidebar-link active flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-dashboard">📊 Dashboard</a>
+<a href="#" onclick="showScreen('calendar')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-calendar">📅 Calendar</a>
+<a href="#" onclick="showScreen('search')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-search">🔍 Search</a>
 <div class="px-4 py-2 mt-2 text-xs text-blue-300 uppercase tracking-wider">Financials</div>
-<a href="#" onclick="showScreen('bills')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-bills"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>Bill Payments</a>
-<a href="#" onclick="showScreen('obligations')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-obligations"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>Recurring Obligations</a>
-<a href="#" onclick="showScreen('insurance')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-insurance"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Insurance Renewals</a>
+<a href="#" onclick="showScreen('bills')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-bills">💵 Bill Payments</a>
+<a href="#" onclick="showScreen('obligations')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-obligations">📋 Obligations</a>
+<a href="#" onclick="showScreen('insurance')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-insurance">🛡️ Insurance</a>
 <div class="px-4 py-2 mt-2 text-xs text-blue-300 uppercase tracking-wider">Assets</div>
-<a href="#" onclick="showScreen('properties')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-properties"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>Properties</a>
-<a href="#" onclick="showScreen('maintenance')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-maintenance"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l1.959 1.959m-1.959-1.959L8.88 13.21m2.54 2.96l-3.019 3.019M8.88 13.21a2.652 2.652 0 01-3.019-3.019m3.019 3.019L5.86 16.229m3.019-3.019l-1.959-1.959m1.959 1.959l5.877-5.877m-5.877 5.877L3.75 21A2.652 2.652 0 017.71 17.25l5.877-5.877m0 0L9.13 8.88m5.877 5.877L21 7.71a2.652 2.652 0 00-3.74-3.74l-5.88 5.877m5.877-5.877L12.5 2.5"/></svg>Maintenance & Services</a>
+<a href="#" onclick="showScreen('properties')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-properties">🏠 Properties</a>
+<a href="#" onclick="showScreen('maintenance')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-maintenance">🔧 Maintenance</a>
 <div class="px-4 py-2 mt-2 text-xs text-blue-300 uppercase tracking-wider">Personal</div>
-<a href="#" onclick="showScreen('health')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-health"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>Health Management</a>
-<a href="#" onclick="showScreen('documents')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-documents"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Document Vault</a>
+<a href="#" onclick="showScreen('health')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-health">❤️ Health</a>
+<a href="#" onclick="showScreen('documents')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-documents">📁 Documents</a>
 <div class="px-4 py-2 mt-2 text-xs text-blue-300 uppercase tracking-wider">Insights</div>
-<a href="#" onclick="showScreen('reports')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-reports"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Reports & Analytics</a>
+<a href="#" onclick="showScreen('reports')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-reports">📈 Reports</a>
 <div class="px-4 py-2 mt-2 text-xs text-blue-300 uppercase tracking-wider">System</div>
-<a href="#" onclick="showScreen('settings')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-settings"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Settings</a>
-<a href="#" onclick="showScreen('login')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>Logout</a>
+<a href="#" onclick="showScreen('recordings')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-recordings">🎙️ Call Recordings</a>
+      <a href="#" onclick="showScreen('settings')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-settings">⚙️ Settings</a>
+      <a href="#" onclick="logout()" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm">🚪 Logout</a>
 </nav>
-<div class="p-4 border-t border-[#1e3a5f]"><div class="flex items-center gap-3"><div class="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center font-semibold">N</div><div><div class="text-sm font-medium">Neha</div><div class="text-xs text-blue-300">neha@example.com</div></div></div></div>
+<div class="p-4 border-t border-[#1e3a5f]"><div class="flex items-center gap-3"><div class="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center font-semibold" id="user-avatar">U</div><div><div class="text-sm font-medium" id="user-name">User</div><div class="text-xs text-blue-300" id="user-email">user@example.com</div></div></div></div>
 </aside>
 
 <!-- MAIN -->
 <main class="flex-1 overflow-y-auto bg-[#f0f2f5]">
 <div class="bg-white shadow-sm px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+<div class="flex items-center gap-3">
+<button onclick="showScreen('dashboard')" title="Go to Dashboard" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background:#1a5276;color:#fff;border-radius:8px;border:none;cursor:pointer;font-size:16px" onmouseover="this.style.background='#0d2745'" onmouseout="this.style.background='#1a5276'">🏠</button>
 <h1 id="page-title" class="text-lg font-semibold text-gray-800">Dashboard</h1>
-<div class="flex items-center gap-4"><div class="relative"><input type="text" placeholder="Search..." class="pl-9 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg w-64" onfocus="showScreen('search')"><svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div><button class="relative p-2 text-gray-500 hover:text-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg><span class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span></button></div>
+</div>
+<div class="flex items-center gap-4">
+<input type="text" placeholder="Search..." class="pl-3 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg w-64" onfocus="showScreen('search')" id="header-search">
+</div>
 </div>
 <div class="p-6">
 
-<!-- ====== DASHBOARD ====== -->
+<!-- DASHBOARD -->
 <div class="screen active" id="screen-dashboard">
-<div class="grid grid-cols-4 gap-4 mb-6">
-<div class="card bg-white rounded-xl p-5"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500">Due This Week</p><p class="text-2xl font-bold text-gray-800 mt-1">7</p><p class="text-xs text-red-500 mt-1">2 overdue</p></div><div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div></div></div>
-<div class="card bg-white rounded-xl p-5"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500">Bills (Month)</p><p class="text-2xl font-bold text-gray-800 mt-1">₹48,500</p><p class="text-xs text-green-500 mt-1">3 paid</p></div><div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div></div></div>
-<div class="card bg-white rounded-xl p-5"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500">Properties</p><p class="text-2xl font-bold text-gray-800 mt-1">3</p><p class="text-xs text-gray-400 mt-1">1 maintenance due</p></div><div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div></div></div>
-<div class="card bg-white rounded-xl p-5"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500">Health Reminders</p><p class="text-2xl font-bold text-gray-800 mt-1">2</p><p class="text-xs text-red-500 mt-1">Bruno's vet visit</p></div><div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div></div></div>
-</div>
+<div class="grid grid-cols-4 gap-4 mb-6" id="dash-cards"></div>
 <div class="grid grid-cols-2 gap-6 mb-6">
-<div class="card bg-white rounded-xl p-5"><h3 class="font-semibold text-gray-800 mb-4">Upcoming Due Dates</h3><div class="space-y-3">
-<div class="flex items-center justify-between p-3 bg-red-50 rounded-lg border-l-4 border-red-500"><div><p class="font-medium text-gray-800 text-sm">Electricity Bill — Bandra Home</p><p class="text-xs text-gray-500">Due: Jul 30, 2026 (2 days)</p></div><span class="badge-overdue text-xs px-2 py-1 rounded-full">OVERDUE</span></div>
-<div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg border-l-4 border-orange-500"><div><p class="font-medium text-gray-800 text-sm">Society Maintenance — Alibag</p><p class="text-xs text-gray-500">Due: Aug 5, 2026</p></div><span class="badge-due text-xs px-2 py-1 rounded-full">DUE SOON</span></div>
-<div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-500"><div><p class="font-medium text-gray-800 text-sm">Car Service — Honda City</p><p class="text-xs text-gray-500">Due: Aug 10, 2026</p></div><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></div>
-<div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500"><div><p class="font-medium text-gray-800 text-sm">Health Insurance Renewal</p><p class="text-xs text-gray-500">Due: Aug 15, 2026</p></div><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></div>
-<div class="flex items-center justify-between p-3 bg-purple-50 rounded-lg border-l-4 border-purple-500"><div><p class="font-medium text-gray-800 text-sm">Bruno — Vet Checkup</p><p class="text-xs text-gray-500">Due: Aug 18, 2026</p></div><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></div>
-</div></div>
-<div class="card bg-white rounded-xl p-5"><h3 class="font-semibold text-gray-800 mb-4">Recent Activity</h3><div class="space-y-3">
-<div class="flex items-start gap-3 p-3 border-b border-gray-100"><div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div><div><p class="text-sm text-gray-800">Paid Airtel broadband bill — ₹1,499</p><p class="text-xs text-gray-400">Jul 25, 2026</p></div></div>
-<div class="flex items-start gap-3 p-3 border-b border-gray-100"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><div><p class="text-sm text-gray-800">Uploaded property tax receipt — Bandra</p><p class="text-xs text-gray-400">Jul 23, 2026</p></div></div>
-<div class="flex items-start gap-3 p-3 border-b border-gray-100"><div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div><div><p class="text-sm text-gray-800">Added prescription — Mom's BP meds</p><p class="text-xs text-gray-400">Jul 20, 2026</p></div></div>
-<div class="flex items-start gap-3 p-3 border-b border-gray-100"><div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h12a2 2 0 002-2v-5m-4-4l4 4m0 0l4-4m-4 4V3"/></svg></div><div><p class="text-sm text-gray-800">Society fee reminder sent — ₹5,000</p><p class="text-xs text-gray-400">Jul 18, 2026</p></div></div>
-</div></div>
+<div class="card bg-white rounded-xl p-5"><h3 class="font-semibold text-gray-800 mb-4">Upcoming Due Dates</h3><div class="space-y-3" id="dash-upcoming"></div></div>
+<div class="card bg-white rounded-xl p-5"><h3 class="font-semibold text-gray-800 mb-4">Recent Activity</h3><div class="space-y-3" id="dash-recent"></div></div>
 </div>
 <div class="grid grid-cols-2 gap-6">
 <div class="card bg-white rounded-xl p-5"><h3 class="font-semibold text-gray-800 mb-4">Monthly Spending</h3><canvas id="chart-spending" height="180"></canvas></div>
-<div class="card bg-white rounded-xl p-5"><h3 class="font-semibold text-gray-800 mb-4">Reminders (Next 30 Days)</h3><canvas id="chart-reminders" height="180"></canvas></div>
+<div class="card bg-white rounded-xl p-5"><h3 class="font-semibold text-gray-800 mb-4">Reminders</h3><canvas id="chart-reminders" height="180"></canvas></div>
 </div>
 </div>
 
-<!-- ====== LOGIN ====== -->
-<div class="screen" id="screen-login">
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0d2745] to-[#1a5276]">
-<div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-<div class="text-center mb-8"><div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-3xl font-bold text-white mx-auto mb-4">L</div><h2 class="text-2xl font-bold text-gray-800">LifeOS</h2><p class="text-gray-500 text-sm mt-1">Your personal operating system</p></div>
-<div class="space-y-4">
-<div><label class="text-sm font-medium text-gray-700">Email</label><input type="email" placeholder="neha@example.com" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Password</label><input type="password" placeholder="••••••••" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div class="flex items-center justify-between"><label class="flex items-center gap-2 text-sm text-gray-600"><input type="checkbox" class="rounded"> Remember me</label><a href="#" class="text-sm text-blue-600 hover:underline">Forgot password?</a></div>
-<button onclick="showScreen('dashboard')" class="w-full bg-[#1a5276] text-white py-2.5 rounded-lg font-medium hover:bg-[#0d2745] transition">Sign In</button>
-<div class="flex items-center gap-2"><div class="flex-1 border-t border-gray-200"></div><span class="text-xs text-gray-400">OR</span><div class="flex-1 border-t border-gray-200"></div></div>
-<button class="w-full border border-gray-300 py-2.5 rounded-lg font-medium text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"><svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.24-.72-.38-1.49-.38-2.09s.14-1.37.38-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Sign in with Google</button>
-</div>
-<p class="text-center text-sm text-gray-500 mt-6">Don't have an account? <a href="#" class="text-blue-600 hover:underline">Sign up</a></p>
-</div>
-</div>
-</div>
+<!-- LOGIN (hidden inside app) -->
+<div class="screen" id="screen-login"></div>
 
-<!-- ====== BILLS ====== -->
+<!-- BILLS -->
 <div class="screen" id="screen-bills">
 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Bill Payments</h2><button onclick="showScreen('bill-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Bill</button></div>
-<div class="grid grid-cols-4 gap-4 mb-6">
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Total Due</p><p class="text-xl font-bold text-red-500 mt-1">₹12,300</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Paid This Month</p><p class="text-xl font-bold text-green-500 mt-1">₹36,200</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Upcoming (30 days)</p><p class="text-xl font-bold text-blue-500 mt-1">₹18,500</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Irregularities</p><p class="text-xl font-bold text-orange-500 mt-1">1</p></div>
-</div>
-<div class="card bg-white rounded-xl overflow-hidden">
-<table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bill Type</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Method</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3"></th></tr></thead>
-<tbody>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Electricity</td><td class="px-4 py-3 text-sm">BEST</td><td class="px-4 py-3 text-sm font-medium">₹3,200</td><td class="px-4 py-3 text-sm text-red-500">Jul 30, 2026</td><td class="px-4 py-3 text-sm">UPI (GPay)</td><td class="px-4 py-3"><span class="badge-overdue text-xs px-2 py-1 rounded-full">OVERDUE</span></td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Mobile</td><td class="px-4 py-3 text-sm">Jio</td><td class="px-4 py-3 text-sm font-medium">₹699</td><td class="px-4 py-3 text-sm">Aug 3, 2026</td><td class="px-4 py-3 text-sm">Auto-pay (Credit Card)</td><td class="px-4 py-3"><span class="badge-due text-xs px-2 py-1 rounded-full">DUE SOON</span></td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Internet</td><td class="px-4 py-3 text-sm">Airtel</td><td class="px-4 py-3 text-sm font-medium">₹1,499</td><td class="px-4 py-3 text-sm">Jul 25, 2026</td><td class="px-4 py-3 text-sm">UPI (GPay)</td><td class="px-4 py-3"><span class="badge-paid text-xs px-2 py-1 rounded-full">PAID</span></td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Credit Card</td><td class="px-4 py-3 text-sm">HDFC</td><td class="px-4 py-3 text-sm font-medium">₹8,500</td><td class="px-4 py-3 text-sm">Aug 5, 2026</td><td class="px-4 py-3 text-sm">Net Banking</td><td class="px-4 py-3"><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Credit Card</td><td class="px-4 py-3 text-sm">ICICI</td><td class="px-4 py-3 text-sm font-medium">₹4,200</td><td class="px-4 py-3 text-sm">Aug 8, 2026</td><td class="px-4 py-3 text-sm">Auto-pay</td><td class="px-4 py-3"><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Electricity</td><td class="px-4 py-3 text-sm">MSEDCL (Alibag)</td><td class="px-4 py-3 text-sm font-medium">₹2,100</td><td class="px-4 py-3 text-sm">Aug 10, 2026</td><td class="px-4 py-3 text-sm">UPI (PhonePe)</td><td class="px-4 py-3"><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-</tbody></table>
-</div>
+<div class="grid grid-cols-4 gap-4 mb-6" id="bills-summary"></div>
+<div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bill Type</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3"></th></tr></thead><tbody id="bills-tbody"></tbody></table></div>
 </div>
 
-<!-- ====== BILL NEW ENTRY ====== -->
+<!-- BILL NEW -->
 <div class="screen" id="screen-bill-new">
-<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('bills')" class="text-gray-500 hover:text-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></button><h2 class="text-xl font-semibold text-gray-800">New Bill Entry</h2></div>
+<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('bills')" class="text-gray-500 hover:text-gray-700">← Back</button><h2 class="text-xl font-semibold text-gray-800">New Bill Entry</h2></div>
 <div class="card bg-white rounded-xl p-6 max-w-2xl">
 <div class="grid grid-cols-2 gap-4">
-<div><label class="text-sm font-medium text-gray-700">Bill Type</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Electricity</option><option>Mobile</option><option>Internet</option><option>Credit Card</option><option>Water</option><option>Gas</option><option>Other</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Provider</label><input type="text" placeholder="e.g. BEST, Jio, Airtel" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Amount (₹)</label><input type="number" placeholder="0.00" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Due Date</label><input type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Payment Method</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>UPI (GPay)</option><option>UPI (PhonePe)</option><option>Credit Card</option><option>Net Banking</option><option>Auto-pay</option><option>Cheque</option><option>Cash</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Frequency</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>One-time</option><option>Monthly</option><option>Quarterly</option><option>Half-yearly</option><option>Yearly</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Linked Property</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>None</option><option>Bandra Home</option><option>Alibag Farmhouse</option><option>Office — Lower Parel</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Reminder Days Before</label><input type="number" value="3" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div class="col-span-2"><label class="text-sm font-medium text-gray-700">Notes</label><textarea rows="2" placeholder="Any irregularities or notes..." class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></textarea></div>
-<div class="col-span-2"><label class="flex items-center gap-2 text-sm text-gray-600"><input type="checkbox" class="rounded" checked> Repeat reminder until paid</label></div>
+<div><label class="text-sm font-medium text-gray-700">Bill Type</label><select id="bill-type" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Electricity</option><option>Mobile</option><option>Internet</option><option>Credit Card</option><option>Water</option><option>Gas</option><option>Other</option></select></div>
+<div><label class="text-sm font-medium text-gray-700">Provider</label><input id="bill-provider" type="text" placeholder="e.g. BEST, Jio" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Amount (₹)</label><input id="bill-amount" type="number" placeholder="0.00" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Due Date</label><input id="bill-due" type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Payment Method</label><select id="bill-method" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>upi_gpay</option><option>upi_phonepe</option><option>credit_card</option><option>net_banking</option><option>auto_pay</option><option>cash</option></select></div>
+<div><label class="text-sm font-medium text-gray-700">Frequency</label><select id="bill-freq" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>monthly</option><option>quarterly</option><option>half_yearly</option><option>yearly</option><option>one_time</option></select></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="showScreen('bills')" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save Bill</button><button onclick="showScreen('bills')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveBill()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save Bill</button><button onclick="showScreen('bills')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
-<!-- ====== OBLIGATIONS ====== -->
+<!-- OBLIGATIONS -->
 <div class="screen" id="screen-obligations">
 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Recurring Obligations</h2><button onclick="showScreen('obligation-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Obligation</button></div>
-<div class="grid grid-cols-3 gap-4 mb-6">
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Active Obligations</p><p class="text-xl font-bold text-gray-800 mt-1">8</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Monthly Total</p><p class="text-xl font-bold text-gray-800 mt-1">₹22,500</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Overdue</p><p class="text-xl font-bold text-red-500 mt-1">1</p></div>
-</div>
-<div class="card bg-white rounded-xl overflow-hidden">
-<table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Obligation</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Due</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th></tr></thead>
-<tbody>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Society Maintenance — Bandra</td><td class="px-4 py-3 text-sm">Society Fees</td><td class="px-4 py-3 text-sm font-medium">₹5,000</td><td class="px-4 py-3 text-sm">Monthly</td><td class="px-4 py-3 text-sm text-orange-500">Aug 1, 2026</td><td class="px-4 py-3"><span class="badge-due text-xs px-2 py-1 rounded-full">DUE SOON</span></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Society Maintenance — Alibag</td><td class="px-4 py-3 text-sm">Society Fees</td><td class="px-4 py-3 text-sm font-medium">₹2,500</td><td class="px-4 py-3 text-sm">Quarterly</td><td class="px-4 py-3 text-sm">Aug 5, 2026</td><td class="px-4 py-3"><span class="badge-due text-xs px-2 py-1 rounded-full">DUE SOON</span></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">AC AMC — Daikin</td><td class="px-4 py-3 text-sm">AMC</td><td class="px-4 py-3 text-sm font-medium">₹3,500</td><td class="px-4 py-3 text-sm">Yearly</td><td class="px-4 py-3 text-sm">Sep 15, 2026</td><td class="px-4 py-3"><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Water Purifier AMC</td><td class="px-4 py-3 text-sm">AMC</td><td class="px-4 py-3 text-sm font-medium">₹4,000</td><td class="px-4 py-3 text-sm">Yearly</td><td class="px-4 py-3 text-sm">Oct 1, 2026</td><td class="px-4 py-3"><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Car Insurance</td><td class="px-4 py-3 text-sm">Insurance</td><td class="px-4 py-3 text-sm font-medium">₹12,000</td><td class="px-4 py-3 text-sm">Yearly</td><td class="px-4 py-3 text-sm">Nov 20, 2026</td><td class="px-4 py-3"><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></td></tr>
-</tbody></table>
-</div>
+<div class="grid grid-cols-3 gap-4 mb-6" id="obl-summary"></div>
+<div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Obligation</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Due</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th></tr></thead><tbody id="obl-tbody"></tbody></table></div>
 </div>
 
-<!-- ====== OBLIGATION NEW ====== -->
+<!-- OBLIGATION NEW -->
 <div class="screen" id="screen-obligation-new">
-<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('obligations')" class="text-gray-500 hover:text-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></button><h2 class="text-xl font-semibold text-gray-800">New Recurring Obligation</h2></div>
+<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('obligations')" class="text-gray-500 hover:text-gray-700">← Back</button><h2 class="text-xl font-semibold text-gray-800">New Obligation</h2></div>
 <div class="card bg-white rounded-xl p-6 max-w-2xl">
 <div class="grid grid-cols-2 gap-4">
-<div><label class="text-sm font-medium text-gray-700">Obligation Name</label><input type="text" placeholder="e.g. Society Maintenance" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Category</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Society Fees</option><option>AMC</option><option>Insurance</option><option>Subscription</option><option>Property Tax</option><option>Other</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Amount (₹)</label><input type="number" placeholder="0.00" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Frequency</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Monthly</option><option>Quarterly</option><option>Half-yearly</option><option>Yearly</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">First Due Date</label><input type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Linked Property</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>None</option><option>Bandra Home</option><option>Alibag Farmhouse</option><option>Office — Lower Parel</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Reminder Days Before</label><input type="number" value="5" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Payment Method</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>UPI</option><option>Bank Transfer</option><option>Cheque</option><option>Cash</option></select></div>
-<div class="col-span-2"><label class="flex items-center gap-2 text-sm text-gray-600"><input type="checkbox" class="rounded" checked> Repeat reminder until completed</label></div>
-<div class="col-span-2"><label class="flex items-center gap-2 text-sm text-gray-600"><input type="checkbox" class="rounded"> Send reminder to family member</label></div>
+<div><label class="text-sm font-medium text-gray-700">Name</label><input id="obl-name" type="text" placeholder="e.g. Society Maintenance" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Category</label><select id="obl-category" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Society Fees</option><option>AMC</option><option>Insurance</option><option>Subscription</option><option>Property Tax</option><option>Other</option></select></div>
+<div><label class="text-sm font-medium text-gray-700">Amount (₹)</label><input id="obl-amount" type="number" placeholder="0.00" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Frequency</label><select id="obl-freq" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>monthly</option><option>quarterly</option><option>half_yearly</option><option>yearly</option></select></div>
+<div><label class="text-sm font-medium text-gray-700">Next Due Date</label><input id="obl-due" type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="showScreen('obligations')" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('obligations')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveObligation()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('obligations')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
-<!-- ====== INSURANCE ====== -->
+<!-- INSURANCE -->
 <div class="screen" id="screen-insurance">
 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Insurance Renewals</h2><button onclick="showScreen('insurance-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Policy</button></div>
-<div class="grid grid-cols-3 gap-4 mb-6">
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Active Policies</p><p class="text-xl font-bold text-gray-800 mt-1">5</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Total Premium/Year</p><p class="text-xl font-bold text-gray-800 mt-1">₹1,85,000</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Renewing (90 days)</p><p class="text-xl font-bold text-orange-500 mt-1">2</p></div>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div class="card bg-white rounded-xl p-5"><div class="flex justify-between items-start mb-3"><div><h3 class="font-semibold text-gray-800">Health Insurance — Family Floater</h3><p class="text-sm text-gray-500">HDFC Ergo</p></div><span class="badge-due text-xs px-2 py-1 rounded-full">RENEW SOON</span></div><div class="grid grid-cols-3 gap-3 text-sm"><div><p class="text-gray-400">Policy #</p><p class="font-medium">HDFC-2023-89123</p></div><div><p class="text-gray-400">Premium</p><p class="font-medium">₹45,000/yr</p></div><div><p class="text-gray-400">Renewal</p><p class="font-medium text-orange-500">Aug 15, 2026</p></div></div><div class="mt-3 pt-3 border-t border-gray-100"><p class="text-xs text-gray-400">Coverage: ₹10L family floater | Members: Neha, Mom, Darshan</p></div></div>
-<div class="card bg-white rounded-xl p-5"><div class="flex justify-between items-start mb-3"><div><h3 class="font-semibold text-gray-800">Car Insurance — Honda City</h3><p class="text-sm text-gray-500">ICICI Lombard</p></div><span class="badge-upcoming text-xs px-2 py-1 rounded-full">ACTIVE</span></div><div class="grid grid-cols-3 gap-3 text-sm"><div><p class="text-gray-400">Policy #</p><p class="font-medium">ICICI-2024-44210</p></div><div><p class="text-gray-400">Premium</p><p class="font-medium">₹12,000/yr</p></div><div><p class="text-gray-400">Renewal</p><p class="font-medium">Nov 20, 2026</p></div></div><div class="mt-3 pt-3 border-t border-gray-100"><p class="text-xs text-gray-400">Comprehensive | IDV: ₹8L | NCB: 20%</p></div></div>
-<div class="card bg-white rounded-xl p-5"><div class="flex justify-between items-start mb-3"><div><h3 class="font-semibold text-gray-800">Home Insurance — Bandra</h3><p class="text-sm text-gray-500">Bajaj Allianz</p></div><span class="badge-paid text-xs px-2 py-1 rounded-full">ACTIVE</span></div><div class="grid grid-cols-3 gap-3 text-sm"><div><p class="text-gray-400">Policy #</p><p class="font-medium">BA-2025-77123</p></div><div><p class="text-gray-400">Premium</p><p class="font-medium">₹8,000/yr</p></div><div><p class="text-gray-400">Renewal</p><p class="font-medium">Mar 2027</p></div></div><div class="mt-3 pt-3 border-t border-gray-100"><p class="text-xs text-gray-400">Structure + Contents | Coverage: ₹50L</p></div></div>
-<div class="card bg-white rounded-xl p-5"><div class="flex justify-between items-start mb-3"><div><h3 class="font-semibold text-gray-800">Term Life Insurance</h3><p class="text-sm text-gray-500">LIC</p></div><span class="badge-upcoming text-xs px-2 py-1 rounded-full">ACTIVE</span></div><div class="grid grid-cols-3 gap-3 text-sm"><div><p class="text-gray-400">Policy #</p><p class="font-medium">LIC-2022-33455</p></div><div><p class="text-gray-400">Premium</p><p class="font-medium">₹35,000/yr</p></div><div><p class="text-gray-400">Renewal</p><p class="font-medium">Jan 2027</p></div></div><div class="mt-3 pt-3 border-t border-gray-100"><p class="text-xs text-gray-400">Sum Assured: ₹1Cr | Term: 30 years</p></div></div>
-</div>
+<div class="grid grid-cols-3 gap-4 mb-6" id="ins-summary"></div>
+<div class="grid grid-cols-2 gap-4" id="ins-cards"></div>
 </div>
 
-<!-- ====== INSURANCE NEW ====== -->
+<!-- INSURANCE NEW -->
 <div class="screen" id="screen-insurance-new">
-<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('insurance')" class="text-gray-500 hover:text-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></button><h2 class="text-xl font-semibold text-gray-800">New Insurance Policy</h2></div>
+<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('insurance')" class="text-gray-500 hover:text-gray-700">← Back</button><h2 class="text-xl font-semibold text-gray-800">New Insurance Policy</h2></div>
 <div class="card bg-white rounded-xl p-6 max-w-2xl">
 <div class="grid grid-cols-2 gap-4">
-<div><label class="text-sm font-medium text-gray-700">Policy Type</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Health</option><option>Life</option><option>Car</option><option>Home</option><option>Travel</option><option>Pet</option><option>Other</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Provider</label><input type="text" placeholder="e.g. HDFC Ergo" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Policy Number</label><input type="text" placeholder="Policy #" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Premium Amount (₹)</label><input type="number" placeholder="0.00" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Renewal Date</label><input type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Frequency</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Yearly</option><option>Half-yearly</option><option>Quarterly</option><option>Monthly</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Coverage Amount (₹)</label><input type="number" placeholder="0" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Linked Property</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>None</option><option>Bandra Home</option><option>Alibag Farmhouse</option></select></div>
-<div class="col-span-2"><label class="text-sm font-medium text-gray-700">Coverage Details</label><textarea rows="2" placeholder="e.g. Family floater, comprehensive, IDV..." class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></textarea></div>
-<div class="col-span-2"><label class="text-sm font-medium text-gray-700">Upload Policy Document</label><div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mt-1"><svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><p class="text-sm text-gray-500">Click to upload or drag & drop</p><p class="text-xs text-gray-400">PDF, JPG, PNG up to 10MB</p></div></div>
+<div><label class="text-sm font-medium text-gray-700">Policy Type</label><select id="ins-type" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>health</option><option>life</option><option>car</option><option>home</option><option>travel</option><option>pet</option></select></div>
+<div><label class="text-sm font-medium text-gray-700">Provider</label><input id="ins-provider" type="text" placeholder="e.g. HDFC Ergo" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Policy Number</label><input id="ins-number" type="text" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Premium (₹)</label><input id="ins-premium" type="number" placeholder="0" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Renewal Date</label><input id="ins-renewal" type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Coverage (₹)</label><input id="ins-coverage" type="number" placeholder="0" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="showScreen('insurance')" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save Policy</button><button onclick="showScreen('insurance')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveInsurance()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save Policy</button><button onclick="showScreen('insurance')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
-<!-- ====== PROPERTIES ====== -->
+<!-- PROPERTIES -->
 <div class="screen" id="screen-properties">
 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Properties</h2><button onclick="showScreen('property-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ Add Property</button></div>
-<div class="grid grid-cols-3 gap-4">
-<div class="card bg-white rounded-xl overflow-hidden"><div class="h-32 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center"><svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div><div class="p-5"><h3 class="font-semibold text-gray-800">Bandra Home</h3><p class="text-sm text-gray-500 mt-1">3BHK, Bandra West, Mumbai</p><div class="flex gap-2 mt-3"><span class="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded">Owned</span><span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">Society: Sunrise CHS</span></div><div class="mt-3 pt-3 border-t border-gray-100 flex justify-between text-sm"><div><p class="text-gray-400">Insurance</p><p class="font-medium">₹8,000/yr</p></div><div><p class="text-gray-400">Maintenance</p><p class="font-medium">₹5,000/mo</p></div></div></div></div>
-<div class="card bg-white rounded-xl overflow-hidden"><div class="h-32 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center"><svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div><div class="p-5"><h3 class="font-semibold text-gray-800">Alibag Farmhouse</h3><p class="text-sm text-gray-500 mt-1">4BHK, Alibag, Raigad</p><div class="flex gap-2 mt-3"><span class="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded">Owned</span><span class="bg-orange-50 text-orange-600 text-xs px-2 py-1 rounded">Maint due</span></div><div class="mt-3 pt-3 border-t border-gray-100 flex justify-between text-sm"><div><p class="text-gray-400">Insurance</p><p class="font-medium">₹6,000/yr</p></div><div><p class="text-gray-400">Society</p><p class="font-medium">₹2,500/qtr</p></div></div></div></div>
-<div class="card bg-white rounded-xl overflow-hidden"><div class="h-32 bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center"><svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><div class="p-5"><h3 class="font-semibold text-gray-800">Office — Lower Parel</h3><p class="text-sm text-gray-500 mt-1">Commercial, Lower Parel, Mumbai</p><div class="flex gap-2 mt-3"><span class="bg-purple-50 text-purple-600 text-xs px-2 py-1 rounded">Rented</span><span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">Lease active</span></div><div class="mt-3 pt-3 border-t border-gray-100 flex justify-between text-sm"><div><p class="text-gray-400">Rent</p><p class="font-medium">₹85,000/mo</p></div><div><p class="text-gray-400">Lease until</p><p class="font-medium">Dec 2026</p></div></div></div></div>
-</div>
+<div class="grid grid-cols-3 gap-4" id="prop-cards"></div>
 </div>
 
-<!-- ====== PROPERTY NEW ====== -->
+<!-- PROPERTY NEW -->
 <div class="screen" id="screen-property-new">
-<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('properties')" class="text-gray-500 hover:text-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></button><h2 class="text-xl font-semibold text-gray-800">Add New Property</h2></div>
+<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('properties')" class="text-gray-500 hover:text-gray-700">← Back</button><h2 class="text-xl font-semibold text-gray-800">Add Property</h2></div>
 <div class="card bg-white rounded-xl p-6 max-w-2xl">
-<h3 class="font-medium text-gray-700 mb-4">Property Profile</h3>
 <div class="grid grid-cols-2 gap-4">
-<div><label class="text-sm font-medium text-gray-700">Property Name</label><input type="text" placeholder="e.g. Bandra Home" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Property Type</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Residential</option><option>Commercial</option><option>Farmhouse</option><option>Plot/Land</option><option>Shop</option></select></div>
-<div class="col-span-2"><label class="text-sm font-medium text-gray-700">Address</label><textarea rows="2" placeholder="Full address" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></textarea></div>
-<div><label class="text-sm font-medium text-gray-700">Ownership Type</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Owned</option><option>Rented Out</option><option>Leased</option><option>Co-owned</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Purchase Date</label><input type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Name</label><input id="prop-name" type="text" placeholder="e.g. Bandra Home" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Type</label><select id="prop-type" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>residential</option><option>commercial</option><option>farmhouse</option><option>plot</option><option>shop</option></select></div>
+<div class="col-span-2"><label class="text-sm font-medium text-gray-700">Address</label><textarea id="prop-address" rows="2" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></textarea></div>
+<div><label class="text-sm font-medium text-gray-700">Ownership</label><select id="prop-ownership" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>owned</option><option>rented_out</option><option>leased</option><option>co_owned</option></select></div>
+<div><label class="text-sm font-medium text-gray-700">Society Name</label><input id="prop-society" type="text" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 </div>
-<h3 class="font-medium text-gray-700 mb-4 mt-6">Society Information</h3>
-<div class="grid grid-cols-2 gap-4">
-<div><label class="text-sm font-medium text-gray-700">Society Name</label><input type="text" placeholder="e.g. Sunrise CHS" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Secretary Name</label><input type="text" placeholder="Secretary" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Secretary Phone</label><input type="tel" placeholder="+91..." class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Maintenance Contact</label><input type="tel" placeholder="+91..." class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-</div>
-<div class="flex gap-3 mt-6"><button onclick="showScreen('properties')" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save Property</button><button onclick="showScreen('properties')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveProperty()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('properties')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
-<!-- ====== MAINTENANCE ====== -->
+<!-- MAINTENANCE -->
 <div class="screen" id="screen-maintenance">
 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Maintenance & Services</h2><button onclick="showScreen('maintenance-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Record</button></div>
-<div class="grid grid-cols-4 gap-4 mb-6">
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Due This Month</p><p class="text-xl font-bold text-orange-500 mt-1">2</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Completed (YTD)</p><p class="text-xl font-bold text-green-500 mt-1">14</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Total Cost (YTD)</p><p class="text-xl font-bold text-gray-800 mt-1">₹48,200</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Overdue</p><p class="text-xl font-bold text-red-500 mt-1">1</p></div>
-</div>
-<div class="card bg-white rounded-xl overflow-hidden">
-<table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Property</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Done</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Due</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th></tr></thead>
-<tbody>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">AC Service — 4 units</td><td class="px-4 py-3 text-sm">Property</td><td class="px-4 py-3 text-sm">Bandra Home</td><td class="px-4 py-3 text-sm">Mar 2026</td><td class="px-4 py-3 text-sm text-orange-500">Sep 2026</td><td class="px-4 py-3 text-sm">₹4,000</td><td class="px-4 py-3"><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Car Service — Honda City</td><td class="px-4 py-3 text-sm">Vehicle</td><td class="px-4 py-3 text-sm">—</td><td class="px-4 py-3 text-sm">Jan 2026</td><td class="px-4 py-3 text-sm text-red-500">Aug 10, 2026</td><td class="px-4 py-3 text-sm">₹8,500</td><td class="px-4 py-3"><span class="badge-overdue text-xs px-2 py-1 rounded-full">OVERDUE</span></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Water Tank Cleaning</td><td class="px-4 py-3 text-sm">Property</td><td class="px-4 py-3 text-sm">Bandra Home</td><td class="px-4 py-3 text-sm">Apr 2026</td><td class="px-4 py-3 text-sm">Oct 2026</td><td class="px-4 py-3 text-sm">₹2,500</td><td class="px-4 py-3"><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Pest Control — Alibag</td><td class="px-4 py-3 text-sm">Property</td><td class="px-4 py-3 text-sm">Alibag</td><td class="px-4 py-3 text-sm">May 2026</td><td class="px-4 py-3 text-sm">Nov 2026</td><td class="px-4 py-3 text-sm">₹3,000</td><td class="px-4 py-3"><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">Deep Cleaning — Alibag</td><td class="px-4 py-3 text-sm">Cleaning</td><td class="px-4 py-3 text-sm">Alibag</td><td class="px-4 py-3 text-sm">Jul 2026</td><td class="px-4 py-3 text-sm">Sep 2026</td><td class="px-4 py-3 text-sm">₹3,500</td><td class="px-4 py-3"><span class="badge-upcoming text-xs px-2 py-1 rounded-full">UPCOMING</span></td></tr>
-</tbody></table>
-</div>
+<div class="grid grid-cols-4 gap-4 mb-6" id="maint-summary"></div>
+<div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Due</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th></tr></thead><tbody id="maint-tbody"></tbody></table></div>
 </div>
 
-<!-- ====== MAINTENANCE NEW ====== -->
+<!-- MAINTENANCE NEW -->
 <div class="screen" id="screen-maintenance-new">
-<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('maintenance')" class="text-gray-500 hover:text-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></button><h2 class="text-xl font-semibold text-gray-800">New Maintenance Record</h2></div>
+<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('maintenance')" class="text-gray-500 hover:text-gray-700">← Back</button><h2 class="text-xl font-semibold text-gray-800">New Maintenance Record</h2></div>
 <div class="card bg-white rounded-xl p-6 max-w-2xl">
 <div class="grid grid-cols-2 gap-4">
-<div><label class="text-sm font-medium text-gray-700">Type</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Property Maintenance</option><option>Car Service</option><option>Cleaning</option><option>Pest Control</option><option>Plumbing</option><option>Electrical</option><option>Other</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Title</label><input type="text" placeholder="e.g. AC Service" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Property</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Bandra Home</option><option>Alibag Farmhouse</option><option>Office — Lower Parel</option><option>N/A (Vehicle)</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Service Provider</label><input type="text" placeholder="e.g. Cool Care AC Services" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Cost (₹)</label><input type="number" placeholder="0.00" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Date Completed</label><input type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Next Due Date</label><input type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Frequency</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>One-time</option><option>Monthly</option><option>Quarterly</option><option>Half-yearly</option><option>Yearly</option></select></div>
-<div class="col-span-2"><label class="text-sm font-medium text-gray-700">Notes / Issues</label><textarea rows="3" placeholder="Any issues found, parts replaced, follow-up needed..." class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></textarea></div>
+<div><label class="text-sm font-medium text-gray-700">Type</label><select id="maint-type" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>property</option><option>vehicle</option><option>cleaning</option><option>pest_control</option><option>plumbing</option><option>electrical</option><option>other</option></select></div>
+<div><label class="text-sm font-medium text-gray-700">Title</label><input id="maint-title" type="text" placeholder="e.g. AC Service" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Provider</label><input id="maint-provider" type="text" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Cost (₹)</label><input id="maint-cost" type="number" placeholder="0" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Next Due</label><input id="maint-next" type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Frequency</label><select id="maint-freq" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>one_time</option><option>monthly</option><option>quarterly</option><option>half_yearly</option><option>yearly</option></select></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="showScreen('maintenance')" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save Record</button><button onclick="showScreen('maintenance')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveMaintenance()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('maintenance')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
-<!-- ====== HEALTH ====== -->
+<!-- HEALTH -->
 <div class="screen" id="screen-health">
 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Health Management</h2><button onclick="showScreen('health-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Entry</button></div>
-<div class="grid grid-cols-4 gap-4">
-<div class="card bg-white rounded-xl p-5 text-center"><div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3"><span class="text-2xl">👩</span></div><h3 class="font-semibold text-gray-800">Neha</h3><p class="text-xs text-gray-500 mt-1">Blood: A+</p><p class="text-xs text-gray-400 mt-1">Last visit: Jul 2026</p><div class="mt-3"><span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">No alerts</span></div></div>
-<div class="card bg-white rounded-xl p-5 text-center"><div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3"><span class="text-2xl">👵</span></div><h3 class="font-semibold text-gray-800">Mom</h3><p class="text-xs text-gray-500 mt-1">Blood: B+</p><p class="text-xs text-gray-400 mt-1">BP medication ongoing</p><div class="mt-3"><span class="bg-orange-50 text-orange-600 text-xs px-2 py-1 rounded">Medication active</span></div></div>
-<div class="card bg-white rounded-xl p-5 text-center"><div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3"><span class="text-2xl">👨</span></div><h3 class="font-semibold text-gray-800">Darshan</h3><p class="text-xs text-gray-500 mt-1">Blood: O+</p><p class="text-xs text-gray-400 mt-1">Last checkup: May 2026</p><div class="mt-3"><span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">No alerts</span></div></div>
-<div class="card bg-white rounded-xl p-5 text-center"><div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3"><span class="text-2xl">🐕</span></div><h3 class="font-semibold text-gray-800">Bruno</h3><p class="text-xs text-gray-500 mt-1">Breed: Labrador</p><p class="text-xs text-gray-400 mt-1">Vet checkup due</p><div class="mt-3"><span class="bg-red-50 text-red-600 text-xs px-2 py-1 rounded">Vet visit due</span></div></div>
-</div>
-<div class="card bg-white rounded-xl p-5 mt-6">
-<h3 class="font-semibold text-gray-800 mb-4">Recent Health Activity</h3>
-<div class="space-y-3">
-<div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg"><div><p class="text-sm font-medium text-gray-800">Mom — BP prescription refilled</p><p class="text-xs text-gray-500">Telmisartan 40mg, 30 tablets | Dr. Sharma</p></div><p class="text-xs text-gray-400">Jul 20, 2026</p></div>
-<div class="flex items-center justify-between p-3 bg-green-50 rounded-lg"><div><p class="text-sm font-medium text-gray-800">Neha — Annual health checkup</p><p class="text-xs text-gray-500">Lilavati Hospital | All reports normal</p></div><p class="text-xs text-gray-400">Jul 10, 2026</p></div>
-<div class="flex items-center justify-between p-3 bg-red-50 rounded-lg"><div><p class="text-sm font-medium text-gray-800">Bruno — Vaccination due</p><p class="text-xs text-gray-500">Annual booster | Dr. Patil (Pet Clinic)</p></div><p class="text-xs text-gray-400">Due: Aug 18</p></div>
-</div>
-</div>
+<div class="grid grid-cols-4 gap-4" id="health-cards"></div>
 </div>
 
-<!-- ====== HEALTH NEW ====== -->
+<!-- HEALTH NEW -->
 <div class="screen" id="screen-health-new">
-<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('health')" class="text-gray-500 hover:text-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></button><h2 class="text-xl font-semibold text-gray-800">New Health Entry</h2></div>
+<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('health')" class="text-gray-500 hover:text-gray-700">← Back</button><h2 class="text-xl font-semibold text-gray-800">New Health Profile</h2></div>
 <div class="card bg-white rounded-xl p-6 max-w-2xl">
 <div class="grid grid-cols-2 gap-4">
-<div><label class="text-sm font-medium text-gray-700">Family Member</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Neha</option><option>Mom</option><option>Darshan</option><option>Bruno</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Entry Type</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Doctor Visit</option><option>Prescription</option><option>Lab Test</option><option>Vaccination</option><option>Diagnosis</option><option>Surgery</option><option>Imaging (X-ray/MRI)</option><option>Allergy</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Date</label><input type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Doctor</label><input type="text" placeholder="Dr. Name" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Hospital/Clinic</label><input type="text" placeholder="Hospital name" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Next Appointment</label><input type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div class="col-span-2"><label class="text-sm font-medium text-gray-700">Diagnosis / Notes</label><textarea rows="3" placeholder="Diagnosis, symptoms, observations..." class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></textarea></div>
-<div class="col-span-2"><label class="text-sm font-medium text-gray-700">Medications Prescribed</label><textarea rows="2" placeholder="Medicine name, dosage, duration..." class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></textarea></div>
-<div class="col-span-2"><label class="text-sm font-medium text-gray-700">Upload Reports</label><div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mt-1"><svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><p class="text-sm text-gray-500">Upload prescriptions, lab reports, imaging</p></div></div>
+<div><label class="text-sm font-medium text-gray-700">Member Name</label><input id="health-name" type="text" placeholder="e.g. Mom" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Relationship</label><select id="health-rel" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>self</option><option>mother</option><option>father</option><option>brother</option><option>sister</option><option>spouse</option><option>child</option><option>pet</option></select></div>
+<div><label class="text-sm font-medium text-gray-700">Blood Group</label><input id="health-blood" type="text" placeholder="e.g. A+" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Allergies</label><input id="health-allergies" type="text" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="showScreen('health')" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save Entry</button><button onclick="showScreen('health')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveHealth()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('health')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
-<!-- ====== DOCUMENTS ====== -->
+<!-- DOCUMENTS -->
 <div class="screen" id="screen-documents">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Document Vault</h2><button onclick="showScreen('document-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ Upload Document</button></div>
-<div class="grid grid-cols-4 gap-4 mb-6">
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Total Documents</p><p class="text-xl font-bold text-gray-800 mt-1">47</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Storage Used</p><p class="text-xl font-bold text-gray-800 mt-1">128 MB</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Categories</p><p class="text-xl font-bold text-gray-800 mt-1">9</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Expiring Soon</p><p class="text-xl font-bold text-orange-500 mt-1">2</p></div>
-</div>
-<div class="flex gap-2 mb-4 flex-wrap">
-<span class="bg-[#1a5276] text-white text-xs px-3 py-1.5 rounded-full">All (47)</span>
-<span class="bg-white text-gray-600 text-xs px-3 py-1.5 rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50">Insurance (8)</span>
-<span class="bg-white text-gray-600 text-xs px-3 py-1.5 rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50">Property (12)</span>
-<span class="bg-white text-gray-600 text-xs px-3 py-1.5 rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50">Identity (5)</span>
-<span class="bg-white text-gray-600 text-xs px-3 py-1.5 rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50">Medical (10)</span>
-<span class="bg-white text-gray-600 text-xs px-3 py-1.5 rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50">Tax (4)</span>
-<span class="bg-white text-gray-600 text-xs px-3 py-1.5 rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50">Bank (3)</span>
-<span class="bg-white text-gray-600 text-xs px-3 py-1.5 rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50">Warranty (3)</span>
-<span class="bg-white text-gray-600 text-xs px-3 py-1.5 rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50">Receipts (2)</span>
-</div>
-<div class="card bg-white rounded-xl overflow-hidden">
-<table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Document Name</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Linked To</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th><th class="px-4 py-3"></th></tr></thead>
-<tbody>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">📄 Health Insurance Policy.pdf</td><td class="px-4 py-3 text-sm">Insurance</td><td class="px-4 py-3 text-sm">HDFC Ergo</td><td class="px-4 py-3 text-sm">Jul 2025</td><td class="px-4 py-3 text-sm">2.4 MB</td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">🏠 Property Tax Receipt — Bandra.pdf</td><td class="px-4 py-3 text-sm">Property</td><td class="px-4 py-3 text-sm">Bandra Home</td><td class="px-4 py-3 text-sm">Jul 2026</td><td class="px-4 py-3 text-sm">0.8 MB</td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">🆔 Aadhaar Card.jpg</td><td class="px-4 py-3 text-sm">Identity</td><td class="px-4 py-3 text-sm">Neha</td><td class="px-4 py-3 text-sm">—</td><td class="px-4 py-3 text-sm">1.2 MB</td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">🩺 Blood Test Report.pdf</td><td class="px-4 py-3 text-sm">Medical</td><td class="px-4 py-3 text-sm">Neha — Jul 2026</td><td class="px-4 py-3 text-sm">Jul 2026</td><td class="px-4 py-3 text-sm">1.5 MB</td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">🔧 AC AMC — Daikin.pdf</td><td class="px-4 py-3 text-sm">Warranty</td><td class="px-4 py-3 text-sm">Bandra Home</td><td class="px-4 py-3 text-sm">Sep 2025</td><td class="px-4 py-3 text-sm">0.5 MB</td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">🏦 Rental Agreement — Office.pdf</td><td class="px-4 py-3 text-sm">Property</td><td class="px-4 py-3 text-sm">Office — Lower Parel</td><td class="px-4 py-3 text-sm">Dec 2025</td><td class="px-4 py-3 text-sm">3.2 MB</td><td class="px-4 py-3"><button class="text-blue-600 text-sm hover:underline">View</button></td></tr>
-</tbody></table>
-</div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Document Vault</h2><button onclick="showScreen('document-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ Upload</button></div>
+<div class="grid grid-cols-4 gap-4 mb-6" id="doc-summary"></div>
+<div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th><th class="px-4 py-3"></th></tr></thead><tbody id="doc-tbody"></tbody></table></div>
 </div>
 
-<!-- ====== DOCUMENT NEW ====== -->
+<!-- DOCUMENT NEW -->
 <div class="screen" id="screen-document-new">
-<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('documents')" class="text-gray-500 hover:text-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></button><h2 class="text-xl font-semibold text-gray-800">Upload Document</h2></div>
+<div class="flex items-center gap-4 mb-6"><button onclick="showScreen('documents')" class="text-gray-500 hover:text-gray-700">← Back</button><h2 class="text-xl font-semibold text-gray-800">Upload Document</h2></div>
 <div class="card bg-white rounded-xl p-6 max-w-2xl">
-<div class="border-2 border-dashed border-gray-300 rounded-lg p-10 text-center mb-6"><svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><p class="text-gray-500">Click to upload or drag & drop</p><p class="text-xs text-gray-400 mt-1">PDF, JPG, PNG, DOCX up to 10MB</p></div>
 <div class="grid grid-cols-2 gap-4">
-<div><label class="text-sm font-medium text-gray-700">Document Name</label><input type="text" placeholder="e.g. Health Insurance Policy" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div><label class="text-sm font-medium text-gray-700">Category</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>Insurance</option><option>Property Papers</option><option>Identity Document</option><option>Medical Report</option><option>Tax Document</option><option>Bank Document</option><option>Warranty</option><option>AMC Agreement</option><option>Receipt</option><option>Invoice</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Linked To</label><select class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>None</option><option>Bandra Home</option><option>Alibag Farmhouse</option><option>Office — Lower Parel</option><option>Neha — Health</option><option>Mom — Health</option><option>Darshan — Health</option><option>Bruno — Health</option><option>Honda City</option></select></div>
-<div><label class="text-sm font-medium text-gray-700">Expiry Date (if applicable)</label><input type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div class="col-span-2"><label class="text-sm font-medium text-gray-700">Tags</label><input type="text" placeholder="comma, separated, tags" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<div class="col-span-2"><label class="text-sm font-medium text-gray-700">Notes</label><textarea rows="2" placeholder="Any notes about this document..." class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></textarea></div>
+<div><label class="text-sm font-medium text-gray-700">Name</label><input id="doc-name" type="text" placeholder="e.g. Insurance Policy" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
+<div><label class="text-sm font-medium text-gray-700">Category</label><select id="doc-category" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>insurance</option><option>property</option><option>identity</option><option>medical</option><option>tax</option><option>bank</option><option>warranty</option><option>receipt</option></select></div>
+<div class="col-span-2"><label class="text-sm font-medium text-gray-700">File</label><input id="doc-file" type="file" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="showScreen('documents')" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Upload</button><button onclick="showScreen('documents')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="uploadDocument()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Upload</button><button onclick="showScreen('documents')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
-<!-- ====== CALENDAR ====== -->
+<!-- CALENDAR -->
 <div class="screen" id="screen-calendar">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Calendar — August 2026</h2><div class="flex gap-2"><button class="border border-gray-300 px-3 py-1.5 rounded-lg text-sm">‹</button><button class="border border-gray-300 px-3 py-1.5 rounded-lg text-sm">›</button></div></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Calendar</h2></div>
 <div class="flex gap-2 mb-4 flex-wrap">
 <span class="flex items-center gap-1.5 text-xs text-gray-600"><span class="w-3 h-3 bg-red-500 rounded"></span>Overdue</span>
 <span class="flex items-center gap-1.5 text-xs text-gray-600"><span class="w-3 h-3 bg-orange-500 rounded"></span>Bills</span>
 <span class="flex items-center gap-1.5 text-xs text-gray-600"><span class="w-3 h-3 bg-blue-500 rounded"></span>Insurance</span>
 <span class="flex items-center gap-1.5 text-xs text-gray-600"><span class="w-3 h-3 bg-purple-500 rounded"></span>Health</span>
 <span class="flex items-center gap-1.5 text-xs text-gray-600"><span class="w-3 h-3 bg-green-500 rounded"></span>Maintenance</span>
-<span class="flex items-center gap-1.5 text-xs text-gray-600"><span class="w-3 h-3 bg-gray-400 rounded"></span>Society Fees</span>
+<span class="flex items-center gap-1.5 text-xs text-gray-600"><span class="w-3 h-3 bg-gray-400 rounded"></span>Obligations</span>
 </div>
-<div class="card bg-white rounded-xl p-4">
-<div class="grid grid-cols-7 gap-1 mb-2"><div class="text-center text-xs font-medium text-gray-500 py-2">Sun</div><div class="text-center text-xs font-medium text-gray-500 py-2">Mon</div><div class="text-center text-xs font-medium text-gray-500 py-2">Tue</div><div class="text-center text-xs font-medium text-gray-500 py-2">Wed</div><div class="text-center text-xs font-medium text-gray-500 py-2">Thu</div><div class="text-center text-xs font-medium text-gray-500 py-2">Fri</div><div class="text-center text-xs font-medium text-gray-500 py-2">Sat</div></div>
-<div class="grid grid-cols-7 gap-1">
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-400">26</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-400">27</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-400">28</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-400">29</p></div>
-<div class="h-24 border border-red-100 bg-red-50 rounded p-1 text-xs"><p class="text-red-600 font-medium">30</p><div class="mt-1"><span class="block bg-red-500 text-white px-1 py-0.5 rounded text-xs mb-0.5">Electricity</span></div></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">31</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">1</p><div class="mt-1"><span class="block bg-gray-400 text-white px-1 py-0.5 rounded text-xs mb-0.5">Society</span></div></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">2</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">3</p><div class="mt-1"><span class="block bg-orange-500 text-white px-1 py-0.5 rounded text-xs mb-0.5">Mobile</span></div></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">4</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">5</p><div class="mt-1"><span class="block bg-gray-400 text-white px-1 py-0.5 rounded text-xs mb-0.5">Society Alibag</span></div></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">6</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">7</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">8</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">9</p></div>
-<div class="h-24 border border-green-200 bg-green-50 rounded p-1 text-xs"><p class="text-gray-700">10</p><div class="mt-1"><span class="block bg-green-500 text-white px-1 py-0.5 rounded text-xs mb-0.5">Car Service</span></div></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">11</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">12</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">13</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">14</p></div>
-<div class="h-24 border border-blue-200 bg-blue-50 rounded p-1 text-xs"><p class="text-gray-700">15</p><div class="mt-1"><span class="block bg-blue-500 text-white px-1 py-0.5 rounded text-xs mb-0.5">Insurance</span></div></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">16</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">17</p></div>
-<div class="h-24 border border-purple-200 bg-purple-50 rounded p-1 text-xs"><p class="text-gray-700">18</p><div class="mt-1"><span class="block bg-purple-500 text-white px-1 py-0.5 rounded text-xs mb-0.5">Bruno Vet</span></div></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">19</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">20</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">21</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">22</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">23</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">24</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">25</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">26</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">27</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">28</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">29</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">30</p></div>
-<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-400">31</p></div>
-</div>
-</div>
+<div class="card bg-white rounded-xl p-4" id="calendar-grid"></div>
 </div>
 
-<!-- ====== SEARCH ====== -->
+<!-- SEARCH -->
 <div class="screen" id="screen-search">
 <h2 class="text-xl font-semibold text-gray-800 mb-6">Search</h2>
 <div class="card bg-white rounded-xl p-6 mb-6">
-<div class="relative"><input type="text" placeholder="Search across all data — bills, properties, health, documents..." class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm" autofocus><svg class="w-5 h-5 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
-<div class="flex gap-2 mt-4 flex-wrap"><span class="bg-gray-100 text-xs px-3 py-1 rounded-full">All</span><span class="bg-white border border-gray-200 text-xs px-3 py-1 rounded-full cursor-pointer">Bills</span><span class="bg-white border border-gray-200 text-xs px-3 py-1 rounded-full cursor-pointer">Properties</span><span class="bg-white border border-gray-200 text-xs px-3 py-1 rounded-full cursor-pointer">Health</span><span class="bg-white border border-gray-200 text-xs px-3 py-1 rounded-full cursor-pointer">Documents</span><span class="bg-white border border-gray-200 text-xs px-3 py-1 rounded-full cursor-pointer">Insurance</span></div>
+<div class="relative"><input id="search-input" type="text" placeholder="Search across all data..." class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm" oninput="doSearch()"><svg class="w-5 h-5 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
 </div>
-<div class="card bg-white rounded-xl p-5"><p class="text-gray-400 text-sm text-center py-8">Start typing to search across all your data...</p></div>
+<div class="card bg-white rounded-xl p-5" id="search-results"><p class="text-gray-400 text-sm text-center py-8">Start typing to search across all your data...</p></div>
 </div>
 
-<!-- ====== REPORTS ====== -->
+<!-- REPORTS -->
 <div class="screen" id="screen-reports">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Reports & Analytics</h2><div class="flex gap-2"><select class="border border-gray-300 px-3 py-1.5 rounded-lg text-sm"><option>July 2026</option><option>June 2026</option><option>Last 3 months</option><option>2026 YTD</option></select><button class="bg-[#1a5276] text-white px-4 py-1.5 rounded-lg text-sm">Export PDF</button></div></div>
-<div class="grid grid-cols-4 gap-4 mb-6">
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Total Spending</p><p class="text-xl font-bold text-gray-800 mt-1">₹48,500</p><p class="text-xs text-green-500 mt-1">↓ 8% vs last month</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Bills Paid</p><p class="text-xl font-bold text-gray-800 mt-1">12</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Maintenance Cost</p><p class="text-xl font-bold text-gray-800 mt-1">₹8,500</p></div>
-<div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Health Visits</p><p class="text-xl font-bold text-gray-800 mt-1">3</p></div>
-</div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Reports & Analytics</h2><select id="report-period" onchange="loadReports()" class="border border-gray-300 px-3 py-1.5 rounded-lg text-sm"></select></div>
+<div class="grid grid-cols-4 gap-4 mb-6" id="report-cards"></div>
 <div class="grid grid-cols-2 gap-6">
 <div class="card bg-white rounded-xl p-5"><h3 class="font-semibold text-gray-800 mb-4">Spending by Category</h3><canvas id="chart-category" height="200"></canvas></div>
-<div class="card bg-white rounded-xl p-5"><h3 class="font-semibold text-gray-800 mb-4">Monthly Trend (6 months)</h3><canvas id="chart-trend" height="200"></canvas></div>
+<div class="card bg-white rounded-xl p-5"><h3 class="font-semibold text-gray-800 mb-4">Monthly Trend</h3><canvas id="chart-trend" height="200"></canvas></div>
 </div>
-<div class="card bg-white rounded-xl p-5 mt-6"><h3 class="font-semibold text-gray-800 mb-4">Monthly Summary — July 2026</h3><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-2 text-left text-xs text-gray-500 uppercase">Category</th><th class="px-4 py-2 text-left text-xs text-gray-500 uppercase">Items</th><th class="px-4 py-2 text-left text-xs text-gray-500 uppercase">Amount</th><th class="px-4 py-2 text-left text-xs text-gray-500 uppercase">Status</th></tr></thead><tbody>
-<tr class="border-b border-gray-100"><td class="px-4 py-2 text-sm">Electricity</td><td class="px-4 py-2 text-sm">2</td><td class="px-4 py-2 text-sm font-medium">₹5,300</td><td class="px-4 py-2 text-sm"><span class="text-green-600">Paid</span></td></tr>
-<tr class="border-b border-gray-100"><td class="px-4 py-2 text-sm">Internet & Mobile</td><td class="px-4 py-2 text-sm">2</td><td class="px-4 py-2 text-sm font-medium">₹2,198</td><td class="px-4 py-2 text-sm"><span class="text-green-600">Paid</span></td></tr>
-<tr class="border-b border-gray-100"><td class="px-4 py-2 text-sm">Credit Cards</td><td class="px-4 py-2 text-sm">2</td><td class="px-4 py-2 text-sm font-medium">₹12,700</td><td class="px-4 py-2 text-sm"><span class="text-orange-500">Pending</span></td></tr>
-<tr class="border-b border-gray-100"><td class="px-4 py-2 text-sm">Society Fees</td><td class="px-4 py-2 text-sm">2</td><td class="px-4 py-2 text-sm font-medium">₹7,500</td><td class="px-4 py-2 text-sm"><span class="text-orange-500">Pending</span></td></tr>
-<tr class="border-b border-gray-100"><td class="px-4 py-2 text-sm">Maintenance</td><td class="px-4 py-2 text-sm">1</td><td class="px-4 py-2 text-sm font-medium">₹8,500</td><td class="px-4 py-2 text-sm"><span class="text-red-500">Overdue</span></td></tr>
-<tr class="border-b border-gray-100"><td class="px-4 py-2 text-sm">Insurance Premium</td><td class="px-4 py-2 text-sm">1</td><td class="px-4 py-2 text-sm font-medium">₹12,304</td><td class="px-4 py-2 text-sm"><span class="text-blue-500">Upcoming</span></td></tr>
-</tbody></table></div>
+<div class="card bg-white rounded-xl p-5 mt-6"><h3 class="font-semibold text-gray-800 mb-4">Category Breakdown</h3><table class="w-full" id="report-table"><thead><tr class="bg-gray-50"><th class="px-4 py-2 text-left text-xs text-gray-500 uppercase">Category</th><th class="px-4 py-2 text-left text-xs text-gray-500 uppercase">Amount</th></tr></thead><tbody id="report-tbody"></tbody></table></div>
 </div>
 
-<!-- ====== SETTINGS ====== -->
+<!-- SETTINGS -->
+<div class="screen" id="screen-recordings">
+<h2 class="text-xl font-semibold text-gray-800 mb-6">Call Recordings</h2>
+<div class="card bg-white rounded-xl p-6 mb-4">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="font-semibold text-gray-800">Recent Voice Calls</h3>
+    <button onclick="loadRecordings()" class="bg-[#1a5276] text-white px-3 py-1.5 rounded-lg text-sm hover:bg-[#15406a]">↻ Refresh</button>
+  </div>
+  <p class="text-sm text-gray-500 mb-4">Recordings and transcripts from your Dograh Cloud voice agent calls.</p>
+  <div id="recordings-list" class="space-y-3">
+    <div class="text-center py-8 text-gray-400"><p>Click Refresh to load recordings...</p></div>
+  </div>
+</div>
+</div>
+
 <div class="screen" id="screen-settings">
 <h2 class="text-xl font-semibold text-gray-800 mb-6">Settings</h2>
 <div class="grid grid-cols-2 gap-6">
-<div class="card bg-white rounded-xl p-6"><h3 class="font-semibold text-gray-800 mb-4">Profile</h3><div class="space-y-3"><div><label class="text-sm font-medium text-gray-700">Name</label><input type="text" value="Neha" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><div><label class="text-sm font-medium text-gray-700">Email</label><input type="email" value="neha@example.com" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><div><label class="text-sm font-medium text-gray-700">Phone</label><input type="tel" value="+91 98XXX XXXXX" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><button class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm mt-2">Update Profile</button></div></div>
-<div class="card bg-white rounded-xl p-6"><h3 class="font-semibold text-gray-800 mb-4">Security</h3><div class="space-y-3"><div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><div><p class="text-sm font-medium text-gray-800">Two-Factor Authentication</p><p class="text-xs text-gray-500">Add extra security</p></div><button class="bg-green-500 text-white text-xs px-3 py-1.5 rounded-lg">Enabled</button></div><div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><div><p class="text-sm font-medium text-gray-800">Change Password</p><p class="text-xs text-gray-500">Last changed 30 days ago</p></div><button class="border border-gray-300 text-xs px-3 py-1.5 rounded-lg">Change</button></div><div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><div><p class="text-sm font-medium text-gray-800">Encryption</p><p class="text-xs text-gray-500">AES-256 enabled</p></div><span class="text-green-600 text-xs">✓ Active</span></div></div></div>
-<div class="card bg-white rounded-xl p-6"><h3 class="font-semibold text-gray-800 mb-4">Email Reminders</h3><div class="space-y-3"><div class="flex items-center justify-between"><p class="text-sm text-gray-700">Email notifications</p><input type="checkbox" checked class="rounded"></div><div class="flex items-center justify-between"><p class="text-sm text-gray-700">Repeat until completed</p><input type="checkbox" checked class="rounded"></div><div class="flex items-center justify-between"><p class="text-sm text-gray-700">Overdue alerts</p><input type="checkbox" checked class="rounded"></div><div><label class="text-sm font-medium text-gray-700">Reminder frequency</label><select class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"><option>Daily at 8:00 AM</option><option>Every 3 days</option><option>Weekly</option></select></div></div></div>
-<div class="card bg-white rounded-xl p-6"><h3 class="font-semibold text-gray-800 mb-4">Backup & Data</h3><div class="space-y-3"><div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><div><p class="text-sm font-medium text-gray-800">Auto Backup</p><p class="text-xs text-gray-500">Daily, encrypted</p></div><span class="text-green-600 text-xs">✓ Active</p></div><div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><div><p class="text-sm font-medium text-gray-800">Last Backup</p><p class="text-xs text-gray-500">Jul 28, 2026 02:00 AM</p></div><button class="border border-gray-300 text-xs px-3 py-1.5 rounded-lg">Backup Now</button></div><button class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm mt-2">Export All Data</button></div></div>
+<div class="card bg-white rounded-xl p-6"><h3 class="font-semibold text-gray-800 mb-4">Profile</h3><div class="space-y-3"><div><label class="text-sm font-medium text-gray-700">Name</label><input id="set-name" type="text" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><div><label class="text-sm font-medium text-gray-700">Phone</label><input id="set-phone" type="tel" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><button onclick="updateProfile()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm mt-2">Update Profile</button></div></div>
+<div class="card bg-white rounded-xl p-6"><h3 class="font-semibold text-gray-800 mb-4">Security</h3><div class="space-y-3"><div><label class="text-sm font-medium text-gray-700">Current Password</label><input id="set-old-pass" type="password" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><div><label class="text-sm font-medium text-gray-700">New Password</label><input id="set-new-pass" type="password" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><button onclick="changePassword()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm">Change Password</button></div></div>
 </div>
 </div>
 
-</div><!-- end p-6 -->
+</div>
 </main>
 </div>
 
+<!-- ═══ ELEVENLABS CONVAI WIDGET (BACKUP — currently commented out) ═══ -->
+<!--
+<elevenlabs-convai
+    agent-id="agent_8501kz6z46j5feqvy2mj4az3e0rr"
+    variant="expanded"
+    dismissible="true"
+    avatar-orb-color-1="#1a5276"
+    avatar-orb-color-2="#3498db"
+    action-text="Talk to LifeOS"
+    start-call-text="Start Conversation"
+    end-call-text="End Call"
+    expand-text="Open Chat"
+    listening-text="Listening..."
+    speaking-text="LifeOS is speaking"
+></elevenlabs-convai>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
 <script>
-function showScreen(id){
+// ElevenLabs client tool handlers
+window.LifeOSTools = {
+    navigate_screen: function(params) { showScreen(params.screen || 'dashboard'); return {success:true, message:'Navigated to ' + (params.screen||'dashboard')}; },
+    show_report: function(params) { showScreen('reports'); setTimeout(loadReports,100); return {success:true, message:'Showing reports'}; },
+    search_items: function(params) { showScreen('search'); setTimeout(function(){var i=document.getElementById('search-input');if(i){i.value=params.query||'';doSearch();}},100); return {success:true, message:'Searching for: '+(params.query||'')}; },
+    read_table: function(params) { showScreen(params.screen||'bills'); return {success:true, message:'Reading '+(params.screen||'bills')+' table'}; },
+    get_summary: function(params) { showScreen('dashboard'); setTimeout(loadDashboard,100); return {success:true, message:'Getting summary'}; },
+    export_action: function(params) { return {success:true, message:'Export: '+(params.action||'export')}; },
+    click_item: function(params) { showScreen(params.screen||'bills'); return {success:true, message:'Clicking '+(params.item_name||'')}; }
+};
+</script>
+-->
+
+<!-- ═══ OLD DOGRAH WIDGET (REMOVED — replaced by Converso self-hosted) ═══ -->
+<script>
+// ===== DOGRAH CLIENT TOOL HANDLERS =====
+// These handle the 7 tools from the ElevenLabs agent config
+window.LifeOSTools = {
+  navigate_screen: function(params) {
+    const screen = params.screen || 'dashboard';
+    showScreen(screen);
+    return { success: true, screen: screen, message: 'Navigated to ' + screen };
+  },
+  show_report: function(params) {
+    showScreen('reports');
+    const period = (params.from_date || '') + ' to ' + (params.to_date || '');
+    setTimeout(() => {
+      const sel = document.getElementById('report-period');
+      if (sel && params.from_date) {
+        // Try to match the period
+        const match = params.from_date.match(/(\d{4}-\d{2})/);
+        if (match) sel.value = match[1];
+      }
+      loadReports();
+    }, 100);
+    return { success: true, message: 'Showing reports from ' + period };
+  },
+  search_items: function(params) {
+    showScreen('search');
+    setTimeout(() => {
+      const input = document.getElementById('search-input');
+      if (input) {
+        input.value = params.query || '';
+        doSearch();
+      }
+    }, 100);
+    return { success: true, query: params.query, message: 'Searching for: ' + (params.query || '') };
+  },
+  read_table: function(params) {
+    const screen = params.screen || 'bills';
+    const filter = params.filter || '';
+    showScreen(screen);
+    setTimeout(() => {
+      const tbody = document.querySelector('#screen-' + screen + ' tbody');
+      if (tbody) {
+        const rows = tbody.querySelectorAll('tr');
+        let result = rows.length + ' rows found';
+        if (filter) {
+          const matched = Array.from(rows).filter(r => r.textContent.toLowerCase().includes(filter.toLowerCase()));
+          result = matched.length + ' rows matching "' + filter + '"';
+        }
+        console.log('read_table result:', result);
+      }
+    }, 500);
+    return { success: true, screen: screen, filter: filter, message: 'Reading ' + screen + ' table' + (filter ? ' filtered by ' + filter : '') };
+  },
+  get_summary: function(params) {
+    const type = params.summary_type || 'all';
+    if (type === 'all' || type === 'spending') {
+      showScreen('dashboard');
+      setTimeout(loadDashboard, 100);
+    } else {
+      showScreen(type);
+    }
+    return { success: true, summary_type: type, message: 'Getting ' + type + ' summary' };
+  },
+  export_action: function(params) {
+    return { success: true, action: params.action, message: 'Export action: ' + (params.action || 'export') };
+  },
+  click_item: function(params) {
+    showScreen(params.screen || 'bills');
+    return { success: true, item: params.item_name, message: 'Clicking ' + (params.item_name || '') };
+  }
+};
+
+// Dograh uses webhook tools (server-side) - listen for messages to update UI
+function setupDograhListeners() {
+  if (typeof DograhWidget !== 'undefined') {
+    // Listen for messages from the Dograh widget to update UI
+    DograhWidget.onMessage(function(msg) {
+      console.log('Dograh message:', msg);
+      // Check if the message contains tool call results
+      if (msg && msg.tool_name) {
+        handleDograhToolResult(msg.tool_name, msg.parameters || {});
+      }
+    });
+    console.log('Dograh listeners set up');
+  } else {
+    setTimeout(setupDograhListeners, 2000);
+  }
+}
+
+// Handle tool results from Dograh webhook calls - update the UI accordingly
+function handleDograhToolResult(toolName, params) {
+  console.log('Tool result:', toolName, params);
+  switch(toolName) {
+    case 'navigate_screen':
+      showScreen(params.screen || 'dashboard');
+      break;
+    case 'show_report':
+      showScreen('reports');
+      setTimeout(loadReports, 200);
+      break;
+    case 'search_items':
+      showScreen('search');
+      setTimeout(function() {
+        var input = document.getElementById('search-input');
+        if (input) { input.value = params.query || ''; doSearch(); }
+      }, 200);
+      break;
+    case 'read_table':
+      showScreen(params.screen || 'bills');
+      break;
+    case 'get_summary':
+      showScreen('dashboard');
+      setTimeout(loadDashboard, 200);
+      break;
+    case 'click_item':
+      showScreen(params.screen || 'bills');
+      break;
+  }
+}
+
+function startDograhVoice() {
+  if (typeof DograhWidget !== 'undefined' && DograhWidget.start) {
+    DograhWidget.start();
+  } else if (typeof window.DograhWidget !== 'undefined') {
+    window.DograhWidget.start();
+  } else {
+    console.log('Dograh widget still loading...');
+    // Wait and retry
+    setTimeout(() => {
+      if (typeof DograhWidget !== 'undefined' && DograhWidget.start) DograhWidget.start();
+    }, 2000);
+  }
+}
+// Show label on hover
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('dograh-voice-btn');
+  var label = document.getElementById('dograh-voice-label');
+  if (btn && label) {
+    btn.addEventListener('mouseenter', () => label.style.display = 'block');
+    btn.addEventListener('mouseleave', () => label.style.display = 'none');
+  }
+});
+</script>
+<!-- ═══ CONVERSO SELF-HOSTED VOICE WIDGET (custom blue button removed — keeping Dograh green button) ═══ -->
+<!-- Custom blue circular button commented out — Dograh Cloud green "Talk to Agent" button is the only widget
+<style>
+#converso-voice-btn{position:fixed;bottom:24px;right:24px;z-index:999;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#1a5276,#3498db);border:none;cursor:pointer;box-shadow:0 4px 20px rgba(26,82,118,0.4);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;animation:pulse 2s infinite}
+#converso-voice-btn:hover{transform:scale(1.1);box-shadow:0 6px 25px rgba(26,82,118,0.5)}
+#converso-voice-btn svg{width:28px;height:28px;fill:#fff}
+@keyframes pulse{0%{box-shadow:0 4px 20px rgba(26,82,118,0.4),0 0 0 0 rgba(52,152,219,0.4)}70%{box-shadow:0 4px 20px rgba(26,82,118,0.4),0 0 0 15px rgba(52,152,219,0)}100%{box-shadow:0 4px 20px rgba(26,82,118,0.4),0 0 0 0 rgba(52,152,219,0)}}
+#converso-voice-label{position:fixed;bottom:30px;right:100px;z-index:999;background:#0d2745;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-family:Inter,sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:none}
+#converso-voice-status{position:fixed;bottom:90px;right:24px;z-index:999;background:#0d2745;color:#3498db;padding:6px 12px;border-radius:6px;font-size:12px;font-family:Inter,sans-serif;display:none}
+</style>
+<div id="converso-voice-label">Talk to LifeOS Assistant</div>
+<div id="converso-voice-status">Connecting...</div>
+<button id="converso-voice-btn" onclick="startDograhVoice()" title="Voice Assistant">
+  <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.48 2.84 2.85 5.01 5.91 5.37V19c0 .55.45 1 1 1s1-.45 1-1v-2.49c3.06-.36 5.43-2.53 5.91-5.37.09-.6-.39-1.14-1-1.14z"/></svg>
+</button>
+-->
+
+<div id="local-agent-btn" onclick="startLocalVoice()" title="Talk to LifeOS Assistant (Local)" style="position:fixed;bottom:92px;right:28px;z-index:1000000;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0e6655,#16a085);border:none;cursor:pointer;box-shadow:0 4px 18px rgba(14,102,85,0.45);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;letter-spacing:.5px">L</div>
+<script>
+// Dograh Cloud widget — loads the green "Talk to Agent" button
+const CONVERSO_EMBED_TOKEN = 'emb_0kXojx1ep-hotGl2IYgKdnKVnkmUt_kUpdbeWhx87as';
+const CONVERSO_API_BASE = 'https://app.dograh.com';
+
+(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = CONVERSO_API_BASE + '/embed/dograh-widget.js?token=' + CONVERSO_EMBED_TOKEN + '&apiEndpoint=api.dograh.com';
+  js.async = true;
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'converso-widget'));
+
+function startConversoVoice() {
+  if (typeof ConversoWidget !== 'undefined' && ConversoWidget.start) {
+    ConversoWidget.start();
+  } else if (typeof window.ConversoWidget !== 'undefined') {
+    window.ConversoWidget.start();
+  } else {
+    console.log('Converso widget still loading...');
+    setTimeout(() => {
+      if (typeof ConversoWidget !== 'undefined' && ConversoWidget.start) ConversoWidget.start();
+    }, 2000);
+  }
+}
+
+// Show label on hover
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('converso-voice-btn');
+  var label = document.getElementById('converso-voice-label');
+  if (btn && label) {
+    btn.addEventListener('mouseenter', () => label.style.display = 'block');
+    btn.addEventListener('mouseleave', () => label.style.display = 'none');
+  }
+});
+
+// The Converso widget calls server-side HTTP tools that push navigation via the nav-status API
+// The polling listener (already in the page) picks up navigation commands and calls showScreen()
+</script>
+<script>
+// ===== LOCAL Converso widget (converso.work) — independent of Dograh Cloud =====
+// Start the LOCAL LifeOS agent (workflow 1, BYOK: ollama glm-5.3-flash + deepgram + elevenlabs)
+const LOCAL_EMBED_TOKEN = 'emb_mxy89WFE8Dgj2CBRUEFmW95F8d2EJD14ySFfzErjHpg';
+const LOCAL_API_HOST = 'converso.work';
+
+window.addEventListener('DOMContentLoaded', function() {
+  if (new URLSearchParams(window.location.search).get('voice') === 'local') {
+    setTimeout(startLocalVoice, 600);
+  }
+});
+function startLocalVoice() {
+  // Remove any existing widget instance (fixed element ids collide between loads)
+  ['#dograh-widget-root', '#dograh-widget-styles', '#dograh-inline-styles', '#dograh-widget-cta'].forEach(function(sel) {
+    var el = document.querySelector(sel); if (el) el.remove();
+  });
+  document.querySelectorAll('script[id^="converso-widget"]').forEach(function(s) { s.remove(); });
+  var s = document.createElement('script');
+  s.id = 'converso-widget-local';
+  s.src = 'https://app.dograh.com/embed/dograh-widget.js?token=' + LOCAL_EMBED_TOKEN + '&apiEndpoint=' + LOCAL_API_HOST;
+  s.async = true;
+  document.body.appendChild(s);
+}
+</script>
+
+
+<script>
+// ===== API HELPER =====
+const API = '/api';
+function getToken() { return localStorage.getItem('lifeos_token'); }
+function setToken(t) { localStorage.setItem('lifeos_token', t); }
+async function apiCall(endpoint, method='GET', body=null) {
+  const headers = { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' };
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(API + endpoint, opts);
+  if (resp.status === 401) { logout(); throw new Error('Unauthorized'); }
+  if (!resp.ok) { const err = await resp.json().catch(() => ({detail:'Error'})); throw new Error(err.detail || 'Request failed'); }
+  return resp.json();
+}
+function fmtDate(d) { if(!d) return '—'; const dt = new Date(d); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function fmtMoney(n) { return '₹' + (n||0).toLocaleString('en-IN'); }
+function badge(status) {
+  const map = { pending:'badge-due', paid:'badge-paid', overdue:'badge-overdue', active:'badge-upcoming' };
+  const cls = map[status] || 'badge-upcoming';
+  return '<span class="' + cls + ' text-xs px-2 py-1 rounded-full">' + status.toUpperCase() + '</span>';
+}
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.textContent = msg;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+function emptyState(msg) { return '<div class="empty-state"><p>' + msg + '</p></div>'; }
+
+// ===== AUTH =====
+function toggleRegister() { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); }
+document.getElementById('btn-login').onclick = async function() {
+  const email = document.getElementById('login-email').value;
+  const pass = document.getElementById('login-password').value;
+  try {
+    const data = await apiCall('/auth/login', 'POST', { email, password: pass });
+    setToken(data.access_token);
+    initApp(data.user);
+  } catch(e) { toast(e.message, 'error'); }
+};
+document.getElementById('btn-register').onclick = async function() {
+  const name = document.getElementById('reg-name').value;
+  const email = document.getElementById('reg-email').value;
+  const pass = document.getElementById('reg-password').value;
+  try {
+    const data = await apiCall('/auth/register', 'POST', { name, email, password: pass });
+    setToken(data.access_token);
+    initApp(data.user);
+  } catch(e) { toast(e.message, 'error'); }
+};
+
+function logout() { localStorage.removeItem('lifeos_token'); document.getElementById('app').classList.add('hidden'); document.getElementById('login-screen').classList.remove('hidden'); }
+
+async function initApp(user) {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  if (user) {
+    document.getElementById('user-name').textContent = user.name;
+    document.getElementById('user-email').textContent = user.email;
+    document.getElementById('user-avatar').textContent = user.name[0].toUpperCase();
+    document.getElementById('set-name').value = user.name;
+    document.getElementById('set-phone').value = user.phone || '';
+  }
+  // Generate report periods
+  const now = new Date();
+  const sel = document.getElementById('report-period');
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    sel.appendChild(new Option(d.toLocaleDateString('en-US',{month:'long',year:'numeric'}), val));
+  }
+  loadDashboard();
+}
+
+// ===== NAVIGATION =====
+function toggleSidebar(){ const open = document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').style.display = open?'block':'none'; document.body.classList.toggle('sidebar-lock', open); }
+// Auto-close mobile sidebar after picking a nav link
+document.addEventListener('click', function(e){
+  var link = e.target.closest && e.target.closest('.sidebar-link');
+  if(link && window.innerWidth <= 768){
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').style.display = 'none';
+  }
+});
+const titles = { dashboard:'Dashboard', bills:'Bill Payments', 'bill-new':'New Bill', obligations:'Obligations', 'obligation-new':'New Obligation', insurance:'Insurance', 'insurance-new':'New Policy', properties:'Properties', 'property-new':'Add Property', maintenance:'Maintenance', 'maintenance-new':'New Record', health:'Health', 'health-new':'New Entry', documents:'Documents', 'document-new':'Upload', calendar:'Calendar', search:'Search', reports:'Reports', recordings:'Call Recordings', settings:'Settings' };
+function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.sidebar-link').forEach(s=>s.classList.remove('active'));
-  const screen=document.getElementById('screen-'+id);
-  if(screen)screen.classList.add('active');
-  const nav=document.getElementById('nav-'+id);
-  if(nav)nav.classList.add('active');
-  const titles={'dashboard':'Dashboard','login':'Login','bills':'Bill Payments','bill-new':'New Bill Entry','obligations':'Recurring Obligations','obligation-new':'New Obligation','insurance':'Insurance Renewals','insurance-new':'New Insurance Policy','properties':'Properties','property-new':'Add Property','maintenance':'Maintenance & Services','maintenance-new':'New Maintenance Record','health':'Health Management','health-new':'New Health Entry','documents':'Document Vault','document-new':'Upload Document','calendar':'Calendar','search':'Search','reports':'Reports & Analytics','settings':'Settings'};
-  const t=document.getElementById('page-title');
-  if(t&&titles[id])t.textContent=titles[id];
+  const screen = document.getElementById('screen-'+id);
+  if(screen) screen.classList.add('active');
+  const nav = document.getElementById('nav-'+id);
+  if(nav) nav.classList.add('active');
+  document.getElementById('page-title').textContent = titles[id] || id;
+  if(window.innerWidth<=768) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').style.display='none'; document.body.classList.remove('sidebar-lock'); }
+  // Load data for the screen
+  const loaders = { dashboard: loadDashboard, bills: loadBills, obligations: loadObligations, insurance: loadInsurance, properties: loadProperties, maintenance: loadMaintenance, health: loadHealth, documents: loadDocuments, calendar: loadCalendar, reports: loadReports, recordings: loadRecordings, settings: loadSettings };
+  if (loaders[id]) loaders[id]();
 }
-// Charts
-window.onload=function(){
-  const c1=document.getElementById('chart-spending');
-  if(c1)new Chart(c1,{type:'bar',data:{labels:['Mar','Apr','May','Jun','Jul'],datasets:[{label:'₹',data:[42000,38000,51000,45000,48500],backgroundColor:'#1a5276'}]},options:{responsive:true,plugins:{legend:{display:false}}}});
-  const c2=document.getElementById('chart-reminders');
-  if(c2)new Chart(c2,{type:'doughnut',data:{labels:['Bills','Insurance','Health','Maintenance','Society'],datasets:[{data:[3,1,2,2,1],backgroundColor:['#f39c12','#3498db','#e74c3c','#27ae60','#95a5a6']}]},options:{responsive:true,plugins:{legend:{position:'right'}}}});
-  const c3=document.getElementById('chart-category');
-  if(c3)new Chart(c3,{type:'doughnut',data:{labels:['Bills','Society','Maintenance','Insurance','Health'],datasets:[{data:[20198,7500,8500,12304,0],backgroundColor:['#f39c12','#95a5a6','#27ae60','#3498db','#e74c3c']}]},options:{responsive:true,plugins:{legend:{position:'right'}}}});
-  const c4=document.getElementById('chart-trend');
-  if(c4)new Chart(c4,{type:'line',data:{labels:['Feb','Mar','Apr','May','Jun','Jul'],datasets:[{label:'Total Spending',data:[39000,42000,38000,51000,45000,48500],borderColor:'#1a5276',backgroundColor:'rgba(26,82,118,0.1)',fill:true}]},options:{responsive:true,plugins:{legend:{display:false}}}});
-};
+
+// ===== DASHBOARD =====
+async function loadDashboard() {
+  try {
+    const data = await apiCall('/dashboard');
+    const s = data.summary;
+    document.getElementById('dash-cards').innerHTML = `
+      <div class="card bg-white rounded-xl p-5 cursor-pointer" onclick="showScreen('bills')"><p class="text-sm text-gray-500">Due This Week</p><p class="text-2xl font-bold mt-1">${s.due_this_week}</p></div>
+      <div class="card bg-white rounded-xl p-5 cursor-pointer" onclick="showScreen('bills')"><p class="text-sm text-gray-500">Bills (Month)</p><p class="text-2xl font-bold mt-1">${fmtMoney(s.total_bills_month)}</p></div>
+      <div class="card bg-white rounded-xl p-5 cursor-pointer" onclick="showScreen('properties')"><p class="text-sm text-gray-500">Properties</p><p class="text-2xl font-bold mt-1">${s.properties_count}</p></div>
+      <div class="card bg-white rounded-xl p-5 cursor-pointer" onclick="showScreen('health')"><p class="text-sm text-gray-500">Health Reminders</p><p class="text-2xl font-bold mt-1">${s.health_reminders}</p></div>`;
+    // Upcoming
+    const up = data.upcoming || [];
+    document.getElementById('dash-upcoming').innerHTML = up.length ? up.map(u => {
+      const bg = u.overdue ? 'bg-red-50 border-red-500' : 'bg-orange-50 border-orange-500';
+      const bdg = u.overdue ? 'badge-overdue' : 'badge-due';
+      return `<div class="flex items-center justify-between p-3 ${bg} rounded-lg border-l-4 cursor-pointer" onclick="showScreen('bills')"><div><p class="font-medium text-sm">${u.title}</p><p class="text-xs text-gray-500">Due: ${fmtDate(u.date)}</p></div><span class="${bdg} text-xs px-2 py-1 rounded-full">${u.overdue?'OVERDUE':'DUE'}</span></div>`;
+    }).join('') : emptyState('No upcoming dues');
+    // Recent
+    const rc = data.recent_activity || [];
+    document.getElementById('dash-recent').innerHTML = rc.length ? rc.map(r => `<div class="flex items-start gap-3 p-3 border-b border-gray-100"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">✓</div><div><p class="text-sm">${r.title}</p><p class="text-xs text-gray-400">${fmtDate(r.date)}</p></div></div>`).join('') : emptyState('No recent activity');
+  } catch(e) { toast(e.message,'error'); }
+}
+
+// ===== BILLS =====
+async function loadBills() {
+  try {
+    const [bills, summary] = await Promise.all([apiCall('/bills'), apiCall('/bills/summary')]);
+    const s = summary || {};
+    document.getElementById('bills-summary').innerHTML = `
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Total Due</p><p class="text-xl font-bold text-red-500 mt-1">${fmtMoney(s.total_due)}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Paid (Month)</p><p class="text-xl font-bold text-green-500 mt-1">${fmtMoney(s.paid_this_month)}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Upcoming (30d)</p><p class="text-xl font-bold text-blue-500 mt-1">${fmtMoney(s.upcoming_30_days)}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Pending</p><p class="text-xl font-bold text-orange-500 mt-1">${s.pending_count||0}</p></div>`;
+    const tb = document.getElementById('bills-tbody');
+    if (!bills.length) { tb.innerHTML = '<tr><td colspan="6" class="empty-state">No bills yet. Click + to add one.</td></tr>'; return; }
+    tb.innerHTML = bills.map(b => `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${b.bill_type}</td><td class="px-4 py-3 text-sm">${b.provider}</td><td class="px-4 py-3 text-sm font-medium">${fmtMoney(b.amount)}</td><td class="px-4 py-3 text-sm">${fmtDate(b.due_date)}</td><td class="px-4 py-3">${badge(b.status)}</td><td class="px-4 py-3"><button onclick="payBill(${b.id})" class="text-blue-600 text-sm hover:underline">Pay</button></td></tr>`).join('');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function saveBill() {
+  const body = { bill_type: val('bill-type'), provider: val('bill-provider'), amount: parseFloat(val('bill-amount')), due_date: val('bill-due'), payment_method: val('bill-method'), frequency: val('bill-freq') };
+  try { await apiCall('/bills','POST',body); toast('Bill saved!'); showScreen('bills'); } catch(e) { toast(e.message,'error'); }
+}
+async function payBill(id) {
+  try { await apiCall('/bills/'+id+'/pay','POST'); toast('Bill marked as paid!'); loadBills(); } catch(e) { toast(e.message,'error'); }
+}
+
+// ===== OBLIGATIONS =====
+async function loadObligations() {
+  try {
+    const [obs, summary] = await Promise.all([apiCall('/obligations'), apiCall('/obligations/summary')]);
+    const s = summary || {};
+    document.getElementById('obl-summary').innerHTML = `
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Active</p><p class="text-xl font-bold mt-1">${s.active}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Monthly Total</p><p class="text-xl font-bold mt-1">${fmtMoney(s.monthly_total)}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Overdue</p><p class="text-xl font-bold text-red-500 mt-1">${s.overdue}</p></div>`;
+    const tb = document.getElementById('obl-tbody');
+    if (!obs.length) { tb.innerHTML = '<tr><td colspan="6" class="empty-state">No obligations yet.</td></tr>'; return; }
+    tb.innerHTML = obs.map(o => `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${o.name}</td><td class="px-4 py-3 text-sm">${o.category||'—'}</td><td class="px-4 py-3 text-sm font-medium">${fmtMoney(o.amount)}</td><td class="px-4 py-3 text-sm">${o.frequency}</td><td class="px-4 py-3 text-sm">${fmtDate(o.next_due_date)}</td><td class="px-4 py-3"><button onclick="markOblPaid(${o.id})" class="text-blue-600 text-sm hover:underline">Mark Paid</button></td></tr>`).join('');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function saveObligation() {
+  const body = { name: val('obl-name'), category: val('obl-category'), amount: parseFloat(val('obl-amount')), frequency: val('obl-freq'), next_due_date: val('obl-due'), is_active: true };
+  try { await apiCall('/obligations','POST',body); toast('Obligation saved!'); showScreen('obligations'); } catch(e) { toast(e.message,'error'); }
+}
+async function markOblPaid(id) { try { await apiCall('/obligations/'+id+'/mark-paid','POST'); toast('Marked as paid!'); loadObligations(); } catch(e) { toast(e.message,'error'); } }
+
+// ===== INSURANCE =====
+async function loadInsurance() {
+  try {
+    const [policies, summary] = await Promise.all([apiCall('/insurance'), apiCall('/insurance/summary')]);
+    const s = summary || {};
+    document.getElementById('ins-summary').innerHTML = `
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Active Policies</p><p class="text-xl font-bold mt-1">${s.active_policies}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Total Premium/yr</p><p class="text-xl font-bold mt-1">${fmtMoney(s.total_premium_year)}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Renewing (90d)</p><p class="text-xl font-bold text-orange-500 mt-1">${s.renewing_90_days}</p></div>`;
+    const c = document.getElementById('ins-cards');
+    if (!policies.length) { c.innerHTML = emptyState('No insurance policies yet.'); return; }
+    c.innerHTML = policies.map(p => `<div class="card bg-white rounded-xl p-5"><div class="flex justify-between items-start mb-3"><div><h3 class="font-semibold text-gray-800">${p.policy_type} — ${p.provider}</h3></div>${badge(p.status)}</div><div class="grid grid-cols-3 gap-3 text-sm"><div><p class="text-gray-400">Premium</p><p class="font-medium">${fmtMoney(p.premium_amount)}</p></div><div><p class="text-gray-400">Renewal</p><p class="font-medium">${fmtDate(p.renewal_date)}</p></div><div><p class="text-gray-400">Coverage</p><p class="font-medium">${fmtMoney(p.coverage_amount)}</p></div></div></div>`).join('');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function saveInsurance() {
+  const body = { policy_type: val('ins-type'), provider: val('ins-provider'), policy_number: val('ins-number'), premium_amount: parseFloat(val('ins-premium')), renewal_date: val('ins-renewal'), coverage_amount: parseFloat(val('ins-coverage')), status: 'active', frequency: 'yearly' };
+  try { await apiCall('/insurance','POST',body); toast('Policy saved!'); showScreen('insurance'); } catch(e) { toast(e.message,'error'); }
+}
+
+// ===== PROPERTIES =====
+async function loadProperties() {
+  try {
+    const props = await apiCall('/properties');
+    const c = document.getElementById('prop-cards');
+    if (!props.length) { c.innerHTML = emptyState('No properties yet. Click + to add one.'); return; }
+    c.innerHTML = props.map(p => `<div class="card bg-white rounded-xl overflow-hidden"><div class="h-32 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl">🏠</div><div class="p-5"><h3 class="font-semibold text-gray-800">${p.name}</h3><p class="text-sm text-gray-500 mt-1">${p.address||''}</p><div class="flex gap-2 mt-3"><span class="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded">${p.ownership_type||'owned'}</span>${p.society_name?'<span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">'+p.society_name+'</span>':''}</div></div></div>`).join('');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function saveProperty() {
+  const body = { name: val('prop-name'), property_type: val('prop-type'), address: val('prop-address'), ownership_type: val('prop-ownership'), society_name: val('prop-society') };
+  try { await apiCall('/properties','POST',body); toast('Property saved!'); showScreen('properties'); } catch(e) { toast(e.message,'error'); }
+}
+
+// ===== MAINTENANCE =====
+async function loadMaintenance() {
+  try {
+    const [records, summary] = await Promise.all([apiCall('/maintenance'), apiCall('/maintenance/summary')]);
+    const s = summary || {};
+    document.getElementById('maint-summary').innerHTML = `
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Due (Month)</p><p class="text-xl font-bold text-orange-500 mt-1">${s.due_this_month}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Completed (YTD)</p><p class="text-xl font-bold text-green-500 mt-1">${s.completed_ytd}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Cost (YTD)</p><p class="text-xl font-bold mt-1">${fmtMoney(s.total_cost_ytd)}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Overdue</p><p class="text-xl font-bold text-red-500 mt-1">${s.overdue}</p></div>`;
+    const tb = document.getElementById('maint-tbody');
+    if (!records.length) { tb.innerHTML = '<tr><td colspan="5" class="empty-state">No maintenance records yet.</td></tr>'; return; }
+    tb.innerHTML = records.map(m => `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${m.title}</td><td class="px-4 py-3 text-sm">${m.type}</td><td class="px-4 py-3 text-sm">${fmtDate(m.next_due_date)}</td><td class="px-4 py-3 text-sm">${fmtMoney(m.cost)}</td><td class="px-4 py-3">${badge(m.date_completed ? 'completed' : 'pending')}</td></tr>`).join('');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function saveMaintenance() {
+  const body = { type: val('maint-type'), title: val('maint-title'), service_provider: val('maint-provider'), cost: parseFloat(val('maint-cost')), next_due_date: val('maint-next'), frequency: val('maint-freq'), status: 'pending' };
+  try { await apiCall('/maintenance','POST',body); toast('Record saved!'); showScreen('maintenance'); } catch(e) { toast(e.message,'error'); }
+}
+
+// ===== HEALTH =====
+async function loadHealth() {
+  try {
+    const profiles = await apiCall('/health/profiles');
+    const c = document.getElementById('health-cards');
+    if (!profiles.length) { c.innerHTML = emptyState('No health profiles yet.'); return; }
+    c.innerHTML = profiles.map(p => `<div class="card bg-white rounded-xl p-5 text-center"><div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">👤</div><h3 class="font-semibold text-gray-800">${p.member_name}</h3><p class="text-xs text-gray-500 mt-1">${p.member_relationship}</p>${p.blood_group?'<p class="text-xs text-gray-400 mt-1">Blood: '+p.blood_group+'</p>':''}${p.allergies?'<div class="mt-3"><span class="bg-orange-50 text-orange-600 text-xs px-2 py-1 rounded">Allergies: '+p.allergies+'</span></div>':'<div class="mt-3"><span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">No alerts</span></div>'}</div>`).join('');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function saveHealth() {
+  const body = { member_name: val('health-name'), member_relationship: val('health-rel'), blood_group: val('health-blood'), allergies: val('health-allergies') };
+  try { await apiCall('/health/profiles','POST',body); toast('Health profile saved!'); showScreen('health'); } catch(e) { toast(e.message,'error'); }
+}
+
+// ===== DOCUMENTS =====
+async function loadDocuments() {
+  try {
+    const [docs, summary] = await Promise.all([apiCall('/documents'), apiCall('/documents/summary')]);
+    const s = summary || {};
+    document.getElementById('doc-summary').innerHTML = `
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Total</p><p class="text-xl font-bold mt-1">${s.total}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Storage</p><p class="text-xl font-bold mt-1">${(s.storage_used/1024/1024).toFixed(1)} MB</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Categories</p><p class="text-xl font-bold mt-1">${s.categories}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Expiring</p><p class="text-xl font-bold text-orange-500 mt-1">${s.expiring_soon}</p></div>`;
+    const tb = document.getElementById('doc-tbody');
+    if (!docs.length) { tb.innerHTML = '<tr><td colspan="5" class="empty-state">No documents yet.</td></tr>'; return; }
+    tb.innerHTML = docs.map(d => `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${d.name}</td><td class="px-4 py-3 text-sm">${d.category}</td><td class="px-4 py-3 text-sm">${fmtDate(d.uploaded_at)}</td><td class="px-4 py-3 text-sm">${((d.file_size||0)/1024).toFixed(0)} KB</td><td class="px-4 py-3"><a href="/api/documents/${d.id}/download" class="text-blue-600 text-sm hover:underline">Download</a></td></tr>`).join('');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function uploadDocument() {
+  const fileInput = document.getElementById('doc-file');
+  if (!fileInput.files[0]) { toast('Please select a file','error'); return; }
+  const fd = new FormData();
+  fd.append('file', fileInput.files[0]);
+  fd.append('name', val('doc-name'));
+  fd.append('category', val('doc-category'));
+  try {
+    const resp = await fetch(API + '/documents', { method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() }, body: fd });
+    if (!resp.ok) throw new Error('Upload failed');
+    toast('Document uploaded!'); showScreen('documents');
+  } catch(e) { toast(e.message,'error'); }
+}
+
+// ===== CALENDAR =====
+async function loadCalendar() {
+  try {
+    const events = await apiCall('/calendar/events');
+    const now = new Date();
+    const year = now.getFullYear(), month = now.getMonth();
+    const first = new Date(year, month, 1).getDay();
+    const days = new Date(year, month+1, 0).getDate();
+    const colorMap = { bill:'orange', obligation:'gray', insurance:'blue', maintenance:'green', health:'purple', document:'red' };
+    const eventsByDate = {};
+    events.forEach(e => { const d = e.date; if(!eventsByDate[d]) eventsByDate[d]=[]; eventsByDate[d].push(e); });
+    let html = '<div class="grid grid-cols-7 gap-1 mb-2">';
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => html += '<div class="text-center text-xs font-medium text-gray-500 py-2">'+d+'</div>');
+    html += '</div><div class="grid grid-cols-7 gap-1">';
+    for (let i=0;i<first;i++) html += '<div class="h-24 border border-gray-100 rounded p-1"></div>';
+    for (let d=1; d<=days; d++) {
+      const dateStr = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const evs = eventsByDate[dateStr] || [];
+      html += '<div class="h-24 border border-gray-100 rounded p-1 text-xs"><p class="text-gray-700">'+d+'</p>';
+      evs.forEach(e => { html += '<span class="block bg-'+(colorMap[e.type]||'blue')+'-500 text-white px-1 py-0.5 rounded text-xs mb-0.5">'+e.title.substring(0,15)+'</span>'; });
+      html += '</div>';
+    }
+    html += '</div>';
+    document.getElementById('calendar-grid').innerHTML = html;
+  } catch(e) { toast(e.message,'error'); }
+}
+
+// ===== SEARCH =====
+let searchTimer;
+function doSearch() {
+  clearTimeout(searchTimer);
+  const q = document.getElementById('search-input').value;
+  if (!q) { document.getElementById('search-results').innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Start typing to search...</p>'; return; }
+  searchTimer = setTimeout(async () => {
+    try {
+      const data = await apiCall('/search?q=' + encodeURIComponent(q));
+      const results = data.results || [];
+      document.getElementById('search-results').innerHTML = results.length ? results.map(r => '<div class="flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50"><div><p class="text-sm font-medium">'+r.title+'</p><p class="text-xs text-gray-500">'+r.snippet+'</p></div><span class="text-xs text-gray-400">'+r.type+'</span></div>').join('') : '<p class="text-gray-400 text-sm text-center py-8">No results found for "'+q+'"</p>';
+    } catch(e) {}
+  }, 300);
+}
+document.getElementById('header-search')?.addEventListener('input', function() { showScreen('search'); document.getElementById('search-input').value = this.value; doSearch(); });
+
+// ===== REPORTS =====
+async function loadReports() {
+  const period = document.getElementById('report-period')?.value || new Date().toISOString().slice(0,7);
+  try {
+    const data = await apiCall('/reports/summary?period=' + period);
+    document.getElementById('report-cards').innerHTML = `
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Total Spending</p><p class="text-xl font-bold mt-1">${fmtMoney(data.total_spending)}</p></div>
+      <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Categories</p><p class="text-xl font-bold mt-1">${(data.spending_by_category||[]).length}</p></div>`;
+    const cats = data.spending_by_category || [];
+    document.getElementById('report-tbody').innerHTML = cats.length ? cats.map(c => '<tr class="border-b border-gray-100"><td class="px-4 py-2 text-sm">'+c.category+'</td><td class="px-4 py-2 text-sm font-medium">'+fmtMoney(c.amount)+'</td></tr>').join('') : '<tr><td colspan="2" class="empty-state">No spending data for this period</td></tr>';
+    // Charts
+    const c3 = document.getElementById('chart-category');
+    if (c3) { if (c3._chart) c3._chart.destroy(); c3._chart = new Chart(c3,{type:'doughnut',data:{labels:cats.map(c=>c.category),datasets:[{data:cats.map(c=>c.amount),backgroundColor:['#f39c12','#3498db','#e74c3c','#27ae60','#95a5a6','#9b59b6']}],},options:{responsive:true,plugins:{legend:{position:'right'}}}}); }
+    const c4 = document.getElementById('chart-trend');
+    if (c4) { const trend = data.monthly_trend||[]; if (c4._chart) c4._chart.destroy(); c4._chart = new Chart(c4,{type:'line',data:{labels:trend.map(t=>t.month),datasets:[{label:'Spending',data:trend.map(t=>t.amount),borderColor:'#1a5276',backgroundColor:'rgba(26,82,118,0.1)',fill:true}]},options:{responsive:true,plugins:{legend:{display:false}}}}); }
+  } catch(e) { toast(e.message,'error'); }
+}
+
+// ===== SETTINGS =====
+async function loadSettings() {
+  try { const data = await apiCall('/settings'); document.getElementById('set-name').value = data.profile.name; document.getElementById('set-phone').value = data.profile.phone || ''; } catch(e) {}
+}
+
+// ===== CALL RECORDINGS (Dograh Cloud via nginx proxy) =====
+const DOGRAH_WORKFLOW_ID = 10786;
+
+async function loadRecordings() {
+  const listEl = document.getElementById('recordings-list');
+  listEl.innerHTML = '<div class="text-center py-8 text-gray-400"><p>Loading recordings...</p></div>';
+  try {
+    const resp = await fetch('/dograh-api/workflow/' + DOGRAH_WORKFLOW_ID + '/runs');
+    const data = await resp.json();
+    const runs = (data.runs || []).filter(r => r.is_completed).slice(0, 10);
+    if (!runs.length) {
+      listEl.innerHTML = '<div class="text-center py-8 text-gray-400"><p>No recordings yet. Make a voice call to see recordings here.</p></div>';
+      return;
+    }
+    // Fetch details for each run (to get public URLs)
+    const details = await Promise.all(runs.map(r =>
+      fetch('/dograh-api/workflow/' + DOGRAH_WORKFLOW_ID + '/runs/' + r.id).then(r => r.json()).catch(() => r)
+    ));
+    listEl.innerHTML = details.map(r => {
+      const date = new Date(r.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      const duration = r.cost_info?.call_duration_seconds || 0;
+      const durStr = duration > 0 ? Math.floor(duration/60) + ':' + String(duration%60).padStart(2,'0') : '—';
+      const recUrl = r.recording_public_url || '';
+      const transUrl = r.transcript_public_url || '';
+      const tokens = r.usage_info?.llm ? Object.values(r.usage_info.llm)[0]?.total_tokens || 0 : 0;
+      return '<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">' +
+        '<div class="flex items-center justify-between mb-2">' +
+          '<div class="flex items-center gap-3">' +
+            '<div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-lg">📞</div>' +
+            '<div>' +
+              '<p class="font-medium text-sm text-gray-800">' + date + '</p>' +
+              '<p class="text-xs text-gray-500">Duration: ' + durStr + ' · Tokens: ' + tokens.toLocaleString() + '</p>' +
+            '</div>' +
+          '</div>' +
+          '<span class="badge-paid text-xs px-2 py-1 rounded-full">Completed</span>' +
+        '</div>' +
+        '<div class="flex gap-2 mt-3">' +
+          (recUrl ? '<a href="' + recUrl + '" target="_blank" class="text-xs bg-[#1a5276] text-white px-3 py-1.5 rounded-lg hover:bg-[#15406a]">🎧 Download Audio</a>' : '<span class="text-xs text-gray-400 px-3 py-1.5">No audio</span>') +
+          (transUrl ? '<a href="' + transUrl + '" target="_blank" class="text-xs bg-[#3498db] text-white px-3 py-1.5 rounded-lg hover:bg-[#2980b9]">📝 View Transcript</a>' : '<span class="text-xs text-gray-400 px-3 py-1.5">No transcript</span>') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div class="text-center py-8 text-red-400"><p>Failed to load recordings: ' + e.message + '</p></div>';
+  }
+}
+async function updateProfile() {
+  try { await apiCall('/settings/profile','PUT',{ name: val('set-name'), phone: val('set-phone') }); toast('Profile updated!'); } catch(e) { toast(e.message,'error'); }
+}
+async function changePassword() {
+  try { await apiCall('/settings/password','PUT',{ old_password: val('set-old-pass'), new_password: val('set-new-pass') }); toast('Password changed!'); } catch(e) { toast(e.message,'error'); }
+}
+
+// ===== HELPER =====
+function val(id) { return document.getElementById(id)?.value || ''; }
+
+// ===== INIT =====
+(async function() {
+  const token = getToken();
+  if (token) {
+    try {
+      const user = await apiCall('/auth/me');
+      initApp(user);
+    } catch(e) { logout(); }
+  }
+})();
+
+// === Voice Agent Navigation Listener ===
+let voiceNavWS = null;
+let lastNavTimestamp = '';
+let voiceNavPollTimer = null;
+
+function initVoiceNavigation() {
+    // Connect WebSocket
+    const wsUrl = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/api/voice/ws';
+    try {
+        voiceNavWS = new WebSocket(wsUrl);
+        voiceNavWS.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.action === 'navigate' && data.timestamp !== lastNavTimestamp) {
+                    lastNavTimestamp = data.timestamp;
+                    handleVoiceNavigation(data.screen, data.data);
+                }
+            } catch(e) { console.log('Voice nav parse error:', e); }
+        };
+        voiceNavWS.onclose = function() {
+            console.log('Voice WS closed, starting poll fallback');
+            startNavPolling();
+        };
+        voiceNavWS.onerror = function() {
+            console.log('Voice WS error, starting poll fallback');
+            startNavPolling();
+        };
+    } catch(e) {
+        console.log('WS init failed, using polling:', e);
+        startNavPolling();
+    }
+    
+    // Also start polling as backup (every 2s)
+    startNavPolling();
+}
+
+function startNavPolling() {
+    if (voiceNavPollTimer) return; // already polling
+    voiceNavPollTimer = setInterval(async () => {
+        try {
+            const resp = await fetch('/api/voice/nav-status');
+            const data = await resp.json();
+            if (data.action === 'navigate' && data.timestamp && data.timestamp !== lastNavTimestamp) {
+                lastNavTimestamp = data.timestamp;
+                handleVoiceNavigation(data.screen, data.data);
+            }
+        } catch(e) {}
+    }, 2000);
+}
+
+function handleVoiceNavigation(screen, data) {
+    console.log('Voice navigation:', screen, data);
+    if (typeof showScreen === 'function') {
+        showScreen(screen);
+        if (data && (data.created || data.action_done || data.updated)) {
+            // Item was created/updated/actioned by voice agent — show toast + reload screen data
+            const msg = data.message || (data.created ? ('Created new ' + screen + ' item') : ('Updated ' + screen + ' item'));
+            showToast('✅ ' + msg, 'success');
+            setTimeout(() => reloadScreenData(screen), 300);
+        } else if (screen === 'reports' && data && data.period) {
+            // Voice agent requested a report for a date range — set period dropdown + reload
+            showToast('📊 Loading reports...', 'info');
+            setTimeout(() => {
+                const sel = document.getElementById('report-period');
+                if (sel && data.period.from) {
+                    const match = data.period.from.match(/(\d{4}-\d{2})/);
+                    if (match) sel.value = match[1];
+                }
+                loadReports();
+            }, 200);
+        } else {
+            showToast('🎤 Voice: Navigating to ' + screen, 'info');
+        }
+    } else {
+        const navItem = document.getElementById('nav-' + screen);
+        if (navItem) navItem.click();
+    }
+}
+
+function reloadScreenData(screen) {
+    const loaders = {
+        'bills': () => loadBills && loadBills(),
+        'obligations': () => loadObligations && loadObligations(),
+        'insurance': () => loadInsurance && loadInsurance(),
+        'properties': () => loadProperties && loadProperties(),
+        'maintenance': () => loadMaintenance && loadMaintenance(),
+        'health': () => loadHealth && loadHealth(),
+        'documents': () => loadDocuments && loadDocuments(),
+        'dashboard': () => loadDashboard && loadDashboard(),
+        'reports': () => loadReports && loadReports(),
+    };
+    if (loaders[screen]) loaders[screen]();
+}
+
+// Initialize on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initVoiceNavigation);
+} else {
+    initVoiceNavigation();
+}
+
 </script>
 </body>
 </html>

@@ -1,0 +1,20 @@
+/* esm.sh - @elevenlabs/client@1.14.0 */
+import "/@elevenlabs/client@1.14.0/es2022/dist/BaseConversation.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/InputController.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/WebRTCAudioAdapter.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/platform/VoiceSessionSetup.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/platform/web/audioUnlock.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/platform/web/compatibility.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/platform/web/createWorkletModuleLoader.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/platform/web/input.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/platform/web/output.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/platform/web/webAudioAdapter.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/scribe/microphone.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/utils/ConnectionFactory.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/utils/WebRTCConnection.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/utils/WebSocketConnection.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/utils/attachConnectionToOutput.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/utils/attachInputToConnection.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/utils/audio.mjs";
+import "/@elevenlabs/client@1.14.0/es2022/dist/utils/errors.mjs";
+export * from "/@elevenlabs/client@1.14.0/es2022/client.mjs";
