@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.routers import auth, bills, obligations, insurance, properties, maintenance, health, documents, dashboard, calendar, reports, search, notifications, settings as settings_router, voice_agent, voice_ws
+from app.routers import auth, bills, obligations, insurance, properties, maintenance, health, documents, dashboard, calendar, reports, search, notifications, settings as settings_router, voice_agent, voice_ws, users
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -41,6 +41,7 @@ app.include_router(notifications.router)
 app.include_router(settings_router.router)
 app.include_router(voice_agent.router)
 app.include_router(voice_ws.router)
+app.include_router(users.router)
 
 
 @app.get("/api/health")

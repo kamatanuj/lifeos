@@ -19,7 +19,8 @@ def get_current_user(
 ) -> User:
     # Check API key first (for Dograh tools)
     if x_api_key and x_api_key == API_KEY:
-        user = db.query(User).first()
+        # Pin to the primary account explicitly (admin = lowest id). Never drift to other users.
+        user = db.query(User).filter(User.is_active == True).order_by(User.id).first()
         if user:
             return user
         raise HTTPException(status_code=401, detail="No users in database")

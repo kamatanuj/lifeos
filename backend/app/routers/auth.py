@@ -33,6 +33,8 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is disabled. Contact the administrator.")
     token = create_access_token({"sub": str(user.id), "email": user.email})
     return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
 
