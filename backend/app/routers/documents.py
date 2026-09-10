@@ -84,6 +84,20 @@ def download_document(did: int, db: Session = Depends(get_db), user: User = Depe
     return FileResponse(doc.file_path, filename=doc.name)
 
 
+@router.put("/{did}", response_model=DocumentResponse)
+def update_document(did: int, payload: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Update document metadata (name, category, expiry_date, notes) — file itself unchanged."""
+    doc = db.query(Document).filter(Document.id == did, Document.user_id == user.id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    for k, v in payload.items():
+        if hasattr(Document, k) and k not in ("id", "user_id", "file_path", "file_size", "created_at"):
+            setattr(doc, k, v)
+    db.commit()
+    db.refresh(doc)
+    return doc
+
+
 @router.delete("/{did}")
 def delete_document(did: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     doc = db.query(Document).filter(Document.id == did, Document.user_id == user.id).first()

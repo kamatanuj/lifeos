@@ -182,7 +182,7 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 
 <!-- BILLS -->
 <div class="screen" id="screen-bills">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Bill Payments</h2><button onclick="showScreen('bill-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Bill</button></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Bill Payments</h2><button onclick="resetBillForm()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Bill</button></div>
 <div class="grid grid-cols-4 gap-4 mb-6" id="bills-summary"></div>
 <div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bill Type</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3"></th></tr></thead><tbody id="bills-tbody"></tbody></table></div>
 </div>
@@ -205,7 +205,7 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 
 <!-- OBLIGATIONS -->
 <div class="screen" id="screen-obligations">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Recurring Obligations</h2><button onclick="showScreen('obligation-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Obligation</button></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Recurring Obligations</h2><button onclick="resetOblForm()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Obligation</button></div>
 <div class="grid grid-cols-3 gap-4 mb-6" id="obl-summary"></div>
 <div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Obligation</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Due</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th></tr></thead><tbody id="obl-tbody"></tbody></table></div>
 </div>
@@ -273,7 +273,7 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div class="screen" id="screen-maintenance">
 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Maintenance & Services</h2><button onclick="showScreen('maintenance-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Record</button></div>
 <div class="grid grid-cols-4 gap-4 mb-6" id="maint-summary"></div>
-<div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Due</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th></tr></thead><tbody id="maint-tbody"></tbody></table></div>
+<div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Due</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th></tr></thead><tbody id="maint-tbody"></tbody></table></div>
 </div>
 
 <!-- MAINTENANCE NEW -->
@@ -294,7 +294,7 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 
 <!-- HEALTH -->
 <div class="screen" id="screen-health">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Health Management</h2><button onclick="showScreen('health-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Entry</button></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Health Management</h2><button onclick="resetHealthForm()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Entry</button></div>
 <div class="grid grid-cols-4 gap-4" id="health-cards"></div>
 </div>
 
@@ -669,6 +669,22 @@ function fmtErr(detail) {
 }
 function fmtDate(d) { if(!d) return '—'; const dt = new Date(d); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
 function fmtMoney(n) { return '₹' + (n||0).toLocaleString('en-IN'); }
+function setVal(id, v) { const el = document.getElementById(id); if (!el) return; el.value = v === null || v === undefined ? '' : v; }
+function resetBillForm() { _editBillId = null; ['bill-provider','bill-amount','bill-due'].forEach(i => document.getElementById(i).value=''); document.querySelector('#screen-bill-new h2').textContent = 'New Bill Entry'; showScreen('bill-new'); }
+function resetOblForm() { _editOblId = null; ['obl-name','obl-amount','obl-due'].forEach(i => document.getElementById(i).value=''); document.querySelector('#screen-obligation-new h2').textContent = 'New Recurring Obligation'; showScreen('obligation-new'); }
+function resetHealthForm() { _editHealthId = null; ['health-name','health-blood','health-allergies'].forEach(i => document.getElementById(i).value=''); document.querySelector('#screen-health-new h2').textContent = 'Add Health Profile'; showScreen('health-new'); }
+// Reset edit-mode when Add screens are opened via sidebar/back paths too
+const _origShowScreen = showScreen;
+showScreen = function(id) {
+  if (id === 'bill-new' && _editBillId === null) { const h = document.querySelector('#screen-bill-new h2'); if (h) h.textContent = 'New Bill Entry'; }
+  if (id === 'obligation-new' && _editOblId === null) { const h = document.querySelector('#screen-obligation-new h2'); if (h) h.textContent = 'New Recurring Obligation'; }
+  if (id === 'insurance-new' && _editInsId === null) { const h = document.querySelector('#screen-insurance-new h2'); if (h) h.textContent = 'Add Insurance Policy'; }
+  if (id === 'property-new' && _editPropId === null) { const h = document.querySelector('#screen-property-new h2'); if (h) h.textContent = 'Add New Property'; }
+  if (id === 'maintenance-new' && _editMaintId === null) { const h = document.querySelector('#screen-maintenance-new h2'); if (h) h.textContent = 'Add Maintenance Record'; }
+  if (id === 'health-new' && _editHealthId === null) { const h = document.querySelector('#screen-health-new h2'); if (h) h.textContent = 'Add Health Profile'; }
+  _origShowScreen(id);
+};
+
 function badge(status) {
   const map = { pending:'badge-due', paid:'badge-paid', overdue:'badge-overdue', active:'badge-upcoming' };
   const cls = map[status] || 'badge-upcoming';
@@ -788,12 +804,30 @@ async function loadBills() {
       <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Pending</p><p class="text-xl font-bold text-orange-500 mt-1">${s.pending_count||0}</p></div>`;
     const tb = document.getElementById('bills-tbody');
     if (!bills.length) { tb.innerHTML = '<tr><td colspan="6" class="empty-state">No bills yet. Click + to add one.</td></tr>'; return; }
-    tb.innerHTML = bills.map(b => `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${b.bill_type}</td><td class="px-4 py-3 text-sm">${b.provider}</td><td class="px-4 py-3 text-sm font-medium">${fmtMoney(b.amount)}</td><td class="px-4 py-3 text-sm">${fmtDate(b.due_date)}</td><td class="px-4 py-3">${badge(b.status)}</td><td class="px-4 py-3"><button onclick="payBill(${b.id})" class="text-blue-600 text-sm hover:underline">Pay</button></td></tr>`).join('');
+    tb.innerHTML = bills.map(b => `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${b.bill_type}</td><td class="px-4 py-3 text-sm">${b.provider}</td><td class="px-4 py-3 text-sm font-medium">${fmtMoney(b.amount)}</td><td class="px-4 py-3 text-sm">${fmtDate(b.due_date)}</td><td class="px-4 py-3">${badge(b.status)}</td><td class="px-4 py-3 whitespace-nowrap"><button onclick="payBill(${b.id})" class="text-blue-600 text-sm hover:underline mr-2">Pay</button><button onclick="editBill(${b.id})" class="text-gray-500 text-sm hover:underline mr-2">Edit</button><button onclick="deleteBill(${b.id}, '${(b.provider||'').replace(/'/g,"\\'")}')" class="text-red-500 text-sm hover:underline">Delete</button></td></tr>`).join('');
   } catch(e) { toast(e.message,'error'); }
+}
+let _editBillId = null;
+async function editBill(id) {
+  const b = (await apiCall('/bills')).find(x => x.id === id);
+  if (!b) return;
+  _editBillId = id;
+  setVal('bill-type', b.bill_type); setVal('bill-provider', b.provider); setVal('bill-amount', b.amount);
+  setVal('bill-due', b.due_date); setVal('bill-method', b.payment_method); setVal('bill-freq', b.frequency);
+  document.querySelector('#screen-bill-new h2').textContent = 'Edit Bill';
+  showScreen('bill-new');
 }
 async function saveBill() {
   const body = { bill_type: val('bill-type'), provider: val('bill-provider'), amount: parseFloat(val('bill-amount')), due_date: val('bill-due'), payment_method: val('bill-method'), frequency: val('bill-freq') };
-  try { await apiCall('/bills','POST',body); toast('Bill saved!'); showScreen('bills'); } catch(e) { toast(e.message,'error'); }
+  try {
+    if (_editBillId) { await apiCall('/bills/'+_editBillId,'PUT',body); _editBillId = null; toast('Bill updated!'); }
+    else { await apiCall('/bills','POST',body); toast('Bill saved!'); }
+    showScreen('bills');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function deleteBill(id, name) {
+  if (!confirm('Delete bill from ' + name + '? Payment history for it will also be removed. This cannot be undone.')) return;
+  try { await apiCall('/bills/'+id,'DELETE'); toast('Bill deleted.'); loadBills(); loadDashboard(); } catch(e) { toast(e.message,'error'); }
 }
 async function payBill(id) {
   try {
@@ -824,9 +858,27 @@ async function loadObligations() {
     }).join('');
   } catch(e) { toast(e.message,'error'); }
 }
+let _editOblId = null;
+async function editObligation(id) {
+  const o = (await apiCall('/obligations')).find(x => x.id === id);
+  if (!o) return;
+  _editOblId = id;
+  setVal('obl-name', o.name); setVal('obl-category', o.category); setVal('obl-amount', o.amount);
+  setVal('obl-freq', o.frequency); setVal('obl-due', o.next_due_date);
+  document.querySelector('#screen-obligation-new h2').textContent = 'Edit Obligation';
+  showScreen('obligation-new');
+}
 async function saveObligation() {
   const body = { name: val('obl-name'), category: val('obl-category'), amount: parseFloat(val('obl-amount')), frequency: val('obl-freq'), next_due_date: val('obl-due'), is_active: true };
-  try { await apiCall('/obligations','POST',body); toast('Obligation saved!'); showScreen('obligations'); } catch(e) { toast(e.message,'error'); }
+  try {
+    if (_editOblId) { await apiCall('/obligations/'+_editOblId,'PUT',body); _editOblId = null; toast('Obligation updated!'); }
+    else { await apiCall('/obligations','POST',body); toast('Obligation saved!'); }
+    showScreen('obligations');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function deleteObligation(id, name) {
+  if (!confirm('Delete obligation \u201c' + name + '\u201d? Its payment history will also be removed. This cannot be undone.')) return;
+  try { await apiCall('/obligations/'+id,'DELETE'); toast('Obligation deleted.'); loadObligations(); loadDashboard(); } catch(e) { toast(e.message,'error'); }
 }
 async function markOblPaid(id) { try { await apiCall('/obligations/'+id+'/mark-paid','POST'); toast('Marked as paid!'); loadObligations(); loadDashboard(); } catch(e) { toast(e.message,'error'); } }
 async function markOblUnpaid(id) { try { await apiCall('/obligations/'+id+'/mark-unpaid','POST'); toast('Marked as unpaid.'); loadObligations(); loadDashboard(); } catch(e) { toast(e.message,'error'); } }
@@ -914,12 +966,30 @@ async function loadInsurance() {
       <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Renewing (90d)</p><p class="text-xl font-bold text-orange-500 mt-1">${s.renewing_90_days}</p></div>`;
     const c = document.getElementById('ins-cards');
     if (!policies.length) { c.innerHTML = emptyState('No insurance policies yet.'); return; }
-    c.innerHTML = policies.map(p => `<div class="card bg-white rounded-xl p-5"><div class="flex justify-between items-start mb-3"><div><h3 class="font-semibold text-gray-800">${p.policy_type} — ${p.provider}</h3></div>${badge(p.status)}</div><div class="grid grid-cols-3 gap-3 text-sm"><div><p class="text-gray-400">Premium</p><p class="font-medium">${fmtMoney(p.premium_amount)}</p></div><div><p class="text-gray-400">Renewal</p><p class="font-medium">${fmtDate(p.renewal_date)}</p></div><div><p class="text-gray-400">Coverage</p><p class="font-medium">${fmtMoney(p.coverage_amount)}</p></div></div></div>`).join('');
+    c.innerHTML = policies.map(p => `<div class="card bg-white rounded-xl p-5"><div class="flex justify-between items-start mb-3"><div><h3 class="font-semibold text-gray-800">${p.policy_type} — ${p.provider}</h3></div>${badge(p.status)}</div><div class="grid grid-cols-3 gap-3 text-sm"><div><p class="text-gray-400">Premium</p><p class="font-medium">${fmtMoney(p.premium_amount)}</p></div><div><p class="text-gray-400">Renewal</p><p class="font-medium">${fmtDate(p.renewal_date)}</p></div><div><p class="text-gray-400">Coverage</p><p class="font-medium">${fmtMoney(p.coverage_amount)}</p></div></div><div class="mt-4 pt-3 border-t border-gray-100"><button onclick="editInsurance(${p.id})" class="text-gray-500 text-sm hover:underline mr-3">✏️ Edit</button><button onclick="deleteInsurance(${p.id}, '${(p.provider||'').replace(/'/g,"\\'")}')" class="text-red-500 text-sm hover:underline">🗑 Delete</button></div></div>`).join('');
   } catch(e) { toast(e.message,'error'); }
+}
+let _editInsId = null;
+async function editInsurance(id) {
+  const p = (await apiCall('/insurance')).find(x => x.id === id);
+  if (!p) return;
+  _editInsId = id;
+  setVal('ins-type', p.policy_type); setVal('ins-provider', p.provider); setVal('ins-number', p.policy_number);
+  setVal('ins-premium', p.premium_amount); setVal('ins-renewal', p.renewal_date); setVal('ins-coverage', p.coverage_amount);
+  document.querySelector('#screen-insurance-new h2').textContent = 'Edit Insurance Policy';
+  showScreen('insurance-new');
 }
 async function saveInsurance() {
   const body = { policy_type: val('ins-type'), provider: val('ins-provider'), policy_number: val('ins-number'), premium_amount: parseFloat(val('ins-premium')), renewal_date: val('ins-renewal'), coverage_amount: parseFloat(val('ins-coverage')), status: 'active', frequency: 'yearly' };
-  try { await apiCall('/insurance','POST',body); toast('Policy saved!'); showScreen('insurance'); } catch(e) { toast(e.message,'error'); }
+  try {
+    if (_editInsId) { await apiCall('/insurance/'+_editInsId,'PUT',body); _editInsId = null; toast('Policy updated!'); }
+    else { await apiCall('/insurance','POST',body); toast('Policy saved!'); }
+    showScreen('insurance');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function deleteInsurance(id, provider) {
+  if (!confirm('Delete the ' + provider + ' policy? This cannot be undone.')) return;
+  try { await apiCall('/insurance/'+id,'DELETE'); toast('Policy deleted.'); loadInsurance(); loadDashboard(); } catch(e) { toast(e.message,'error'); }
 }
 
 // ===== PROPERTIES =====
@@ -928,12 +998,30 @@ async function loadProperties() {
     const props = await apiCall('/properties');
     const c = document.getElementById('prop-cards');
     if (!props.length) { c.innerHTML = emptyState('No properties yet. Click + to add one.'); return; }
-    c.innerHTML = props.map(p => `<div class="card bg-white rounded-xl overflow-hidden"><div class="h-32 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl">🏠</div><div class="p-5"><h3 class="font-semibold text-gray-800">${p.name}</h3><p class="text-sm text-gray-500 mt-1">${p.address||''}</p><div class="flex gap-2 mt-3"><span class="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded">${p.ownership_type||'owned'}</span>${p.society_name?'<span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">'+p.society_name+'</span>':''}</div></div></div>`).join('');
+    c.innerHTML = props.map(p => `<div class="card bg-white rounded-xl overflow-hidden"><div class="h-32 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl relative">🏠<div class="absolute top-2 right-2 flex gap-2"><button onclick="editProperty(${p.id})" title="Edit" class="bg-white/90 rounded-full w-8 h-8 flex items-center justify-center hover:bg-white">✏️</button><button onclick="deleteProperty(${p.id}, '${(p.name||'').replace(/'/g,"\\'")}')" title="Delete" class="bg-white/90 rounded-full w-8 h-8 flex items-center justify-center hover:bg-white">🗑</button></div></div><div class="p-5"><h3 class="font-semibold text-gray-800">${p.name}</h3><p class="text-sm text-gray-500 mt-1">${p.address||''}</p><div class="flex gap-2 mt-3"><span class="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded">${p.ownership_type||'owned'}</span>${p.society_name?'<span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">'+p.society_name+'</span>':''}</div></div></div>`).join('');
   } catch(e) { toast(e.message,'error'); }
+}
+let _editPropId = null;
+async function editProperty(id) {
+  const p = (await apiCall('/properties')).find(x => x.id === id);
+  if (!p) return;
+  _editPropId = id;
+  setVal('prop-name', p.name); setVal('prop-type', p.property_type); setVal('prop-address', p.address);
+  setVal('prop-ownership', p.ownership_type); setVal('prop-society', p.society_name);
+  document.querySelector('#screen-property-new h2').textContent = 'Edit Property';
+  showScreen('property-new');
 }
 async function saveProperty() {
   const body = { name: val('prop-name'), property_type: val('prop-type'), address: val('prop-address'), ownership_type: val('prop-ownership'), society_name: val('prop-society') };
-  try { await apiCall('/properties','POST',body); toast('Property saved!'); showScreen('properties'); } catch(e) { toast(e.message,'error'); }
+  try {
+    if (_editPropId) { await apiCall('/properties/'+_editPropId,'PUT',body); _editPropId = null; toast('Property updated!'); }
+    else { await apiCall('/properties','POST',body); toast('Property saved!'); }
+    showScreen('properties');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function deleteProperty(id, name) {
+  if (!confirm('Delete property \u201c' + name + '\u201d? Maintenance records linked to it stay but lose their link. This cannot be undone.')) return;
+  try { await apiCall('/properties/'+id,'DELETE'); toast('Property deleted.'); loadProperties(); loadDashboard(); } catch(e) { toast(e.message,'error'); }
 }
 
 // ===== MAINTENANCE =====
@@ -947,13 +1035,32 @@ async function loadMaintenance() {
       <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Cost (YTD)</p><p class="text-xl font-bold mt-1">${fmtMoney(s.total_cost_ytd)}</p></div>
       <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Overdue</p><p class="text-xl font-bold text-red-500 mt-1">${s.overdue}</p></div>`;
     const tb = document.getElementById('maint-tbody');
-    if (!records.length) { tb.innerHTML = '<tr><td colspan="5" class="empty-state">No maintenance records yet.</td></tr>'; return; }
-    tb.innerHTML = records.map(m => `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${m.title}</td><td class="px-4 py-3 text-sm">${m.type}</td><td class="px-4 py-3 text-sm">${fmtDate(m.next_due_date)}</td><td class="px-4 py-3 text-sm">${fmtMoney(m.cost)}</td><td class="px-4 py-3">${badge(m.date_completed ? 'completed' : 'pending')}</td></tr>`).join('');
+    if (!records.length) { tb.innerHTML = '<tr><td colspan="6" class="empty-state">No maintenance records yet.</td></tr>'; return; }
+    tb.innerHTML = records.map(m => `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${m.title}</td><td class="px-4 py-3 text-sm">${m.type}</td><td class="px-4 py-3 text-sm">${fmtDate(m.next_due_date)}</td><td class="px-4 py-3 text-sm">${fmtMoney(m.cost)}</td><td class="px-4 py-3">${badge(m.date_completed ? 'completed' : 'pending')}</td><td class="px-4 py-3 whitespace-nowrap"><button onclick="editMaintenance(${m.id})" class="text-gray-500 text-sm hover:underline mr-2">Edit</button><button onclick="deleteMaintenance(${m.id}, '${(m.title||'').replace(/'/g,"\\'")}')" class="text-red-500 text-sm hover:underline">Delete</button></td></tr>`).join('');
   } catch(e) { toast(e.message,'error'); }
+}
+let _editMaintId = null;
+async function editMaintenance(id) {
+  const records = await apiCall('/maintenance');
+  const m = records.find(x => x.id === id);
+  if (!m) return;
+  _editMaintId = id;
+  setVal('maint-type', m.type); setVal('maint-title', m.title); setVal('maint-provider', m.service_provider);
+  setVal('maint-cost', m.cost); setVal('maint-next', m.next_due_date); setVal('maint-freq', m.frequency);
+  document.querySelector('#screen-maintenance-new h2').textContent = 'Edit Maintenance Record';
+  showScreen('maintenance-new');
 }
 async function saveMaintenance() {
   const body = { type: val('maint-type'), title: val('maint-title'), service_provider: val('maint-provider'), cost: parseFloat(val('maint-cost')), next_due_date: val('maint-next'), frequency: val('maint-freq'), status: 'pending' };
-  try { await apiCall('/maintenance','POST',body); toast('Record saved!'); showScreen('maintenance'); } catch(e) { toast(e.message,'error'); }
+  try {
+    if (_editMaintId) { await apiCall('/maintenance/'+_editMaintId,'PUT',body); _editMaintId = null; toast('Record updated!'); }
+    else { await apiCall('/maintenance','POST',body); toast('Record saved!'); }
+    showScreen('maintenance');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function deleteMaintenance(id, title) {
+  if (!confirm('Delete maintenance record \u201c' + title + '\u201d? This cannot be undone.')) return;
+  try { await apiCall('/maintenance/'+id,'DELETE'); toast('Record deleted.'); loadMaintenance(); loadDashboard(); } catch(e) { toast(e.message,'error'); }
 }
 
 // ===== HEALTH =====
@@ -962,12 +1069,70 @@ async function loadHealth() {
     const profiles = await apiCall('/health/profiles');
     const c = document.getElementById('health-cards');
     if (!profiles.length) { c.innerHTML = emptyState('No health profiles yet.'); return; }
-    c.innerHTML = profiles.map(p => `<div class="card bg-white rounded-xl p-5 text-center"><div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">👤</div><h3 class="font-semibold text-gray-800">${p.member_name}</h3><p class="text-xs text-gray-500 mt-1">${p.member_relationship}</p>${p.blood_group?'<p class="text-xs text-gray-400 mt-1">Blood: '+p.blood_group+'</p>':''}${p.allergies?'<div class="mt-3"><span class="bg-orange-50 text-orange-600 text-xs px-2 py-1 rounded">Allergies: '+p.allergies+'</span></div>':'<div class="mt-3"><span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">No alerts</span></div>'}</div>`).join('');
+    c.innerHTML = profiles.map(p => `<div class="card bg-white rounded-xl p-5"><div class="text-center relative"><div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">👤</div><div class="absolute top-0 right-0 flex gap-2"><button onclick="editHealthProfile(${p.id})" title="Edit" class="text-gray-400 hover:text-gray-700 text-sm">✏️</button><button onclick="deleteHealthProfile(${p.id}, '${(p.member_name||'').replace(/'/g,"\\'")}')" title="Delete" class="text-red-400 hover:text-red-600 text-sm">🗑</button></div><h3 class="font-semibold text-gray-800">${p.member_name}</h3><p class="text-xs text-gray-500 mt-1">${p.member_relationship}</p>${p.blood_group?'<p class="text-xs text-gray-400 mt-1">Blood: '+p.blood_group+'</p>':''}${p.allergies?'<div class="mt-3"><span class="bg-orange-50 text-orange-600 text-xs px-2 py-1 rounded">Allergies: '+p.allergies+'</span></div>':'<div class="mt-3"><span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">No alerts</span></div>'}</div><div class="mt-4 pt-3 border-t border-gray-100" id="health-records-${p.id}"><button onclick="toggleHealthRecords(${p.id})" class="text-blue-600 text-sm hover:underline">📋 Medical Records</button></div></div>`).join('');
   } catch(e) { toast(e.message,'error'); }
+}
+let _editHealthId = null;
+async function editHealthProfile(id) {
+  const p = (await apiCall('/health/profiles')).find(x => x.id === id);
+  if (!p) return;
+  _editHealthId = id;
+  setVal('health-name', p.member_name); setVal('health-rel', p.member_relationship);
+  setVal('health-blood', p.blood_group); setVal('health-allergies', p.allergies);
+  document.querySelector('#screen-health-new h2').textContent = 'Edit Health Profile';
+  showScreen('health-new');
 }
 async function saveHealth() {
   const body = { member_name: val('health-name'), member_relationship: val('health-rel'), blood_group: val('health-blood'), allergies: val('health-allergies') };
-  try { await apiCall('/health/profiles','POST',body); toast('Health profile saved!'); showScreen('health'); } catch(e) { toast(e.message,'error'); }
+  try {
+    if (_editHealthId) { await apiCall('/health/profiles/'+_editHealthId,'PUT',body); _editHealthId = null; toast('Profile updated!'); }
+    else { await apiCall('/health/profiles','POST',body); toast('Health profile saved!'); }
+    showScreen('health');
+  } catch(e) { toast(e.message,'error'); }
+}
+async function deleteHealthProfile(id, name) {
+  if (!confirm('Delete health profile for ' + name + '? ALL their medical records go too. This cannot be undone.')) return;
+  try { await apiCall('/health/profiles/'+id,'DELETE'); toast('Profile deleted.'); loadHealth(); } catch(e) { toast(e.message,'error'); }
+}
+let _openRecords = {};
+async function toggleHealthRecords(pid) {
+  if (_openRecords[pid]) { _openRecords[pid] = false; document.getElementById('health-records-'+pid).innerHTML = '<button onclick="toggleHealthRecords('+pid+')" class="text-blue-600 text-sm hover:underline">📋 Medical Records</button>'; return; }
+  _openRecords[pid] = true;
+  const recs = await apiCall('/health/profiles/'+pid+'/records');
+  const rows = recs.length ? recs.map(r => `<div class="flex justify-between items-start gap-2 py-2 border-b border-gray-50 last:border-0"><div><p class="text-sm font-medium text-gray-800">${r.entry_type.replace(/_/g,' ')} — ${fmtDate(r.date)}</p>${r.doctor?'<p class="text-xs text-gray-500">Dr. '+r.doctor+(r.hospital? ', '+r.hospital:'')+'</p>':''}${r.diagnosis?'<p class="text-xs text-gray-500">'+r.diagnosis+'</p>':''}${r.medications?'<p class="text-xs text-gray-500">💊 '+r.medications+'</p>':''}${r.next_appointment?'<p class="text-xs text-orange-500">Next appointment: '+fmtDate(r.next_appointment)+'</p>':''}</div><div class="whitespace-nowrap"><button onclick="editHealthRecord(${r.id}, ${pid})" class="text-gray-500 text-xs hover:underline mr-2">Edit</button><button onclick="deleteHealthRecord(${r.id}, ${pid})" class="text-red-500 text-xs hover:underline">Delete</button></div></div>`).join('') : '<p class="text-xs text-gray-400 py-2">No records yet.</p>';
+  document.getElementById('health-records-'+pid).innerHTML = '<div class="flex justify-between items-center mb-1"><span class="text-sm font-medium text-gray-700">📋 Medical Records</span><button onclick="openRecordForm('+pid+')" class="text-blue-600 text-xs hover:underline">+ Add Record</button></div>' + rows + '<div id="record-form-'+pid+'" class="hidden mt-2 space-y-2 bg-gray-50 rounded-lg p-3"><input id="rec-type-'+pid+'" placeholder="Type (doctor_visit, prescription, lab_test, vaccination...)" class="w-full px-3 py-2 border border-gray-200 rounded text-xs"><div class="grid grid-cols-2 gap-2"><input id="rec-date-'+pid+'" type="date" class="px-3 py-2 border border-gray-200 rounded text-xs"><input id="rec-appt-'+pid+'" type="date" placeholder="Next appointment" class="px-3 py-2 border border-gray-200 rounded text-xs"></div><div class="grid grid-cols-2 gap-2"><input id="rec-doctor-'+pid+'" placeholder="Doctor" class="px-3 py-2 border border-gray-200 rounded text-xs"><input id="rec-hospital-'+pid+'" placeholder="Hospital" class="px-3 py-2 border border-gray-200 rounded text-xs"></div><input id="rec-diagnosis-'+pid+'" placeholder="Diagnosis" class="w-full px-3 py-2 border border-gray-200 rounded text-xs"><input id="rec-meds-'+pid+'" placeholder="Medications" class="w-full px-3 py-2 border border-gray-200 rounded text-xs"><div class="flex gap-2"><button onclick="saveHealthRecord('+pid+')" class="bg-[#1a5276] text-white px-3 py-1.5 rounded text-xs">Save Record</button><button onclick="document.getElementById(\'record-form-'+pid+'\').classList.add(\'hidden\')" class="border border-gray-200 px-3 py-1.5 rounded text-xs text-gray-500">Cancel</button></div></div>';
+}
+let _editRecId = null, _editRecPid = null;
+function openRecordForm(pid) { _editRecId = null; _editRecPid = pid; document.getElementById('record-form-'+pid).classList.remove('hidden'); ['rec-type','rec-date','rec-appt','rec-doctor','rec-hospital','rec-diagnosis','rec-meds'].forEach(p => { const el = document.getElementById(p+'-'+pid); if (el.tagName==='INPUT' && el.type!=='date') el.value=''; else if(el.type!=='date') el.value=''; }); }
+async function editHealthRecord(rid, pid) {
+  const recs = await apiCall('/health/profiles/'+pid+'/records');
+  const r = recs.find(x => x.id === rid);
+  if (!r) return;
+  _editRecId = rid; _editRecPid = pid;
+  toggleHealthRecords(pid); _openRecords[pid] = true;
+  setTimeout(() => {
+    document.getElementById('record-form-'+pid).classList.remove('hidden');
+    document.getElementById('rec-type-'+pid).value = r.entry_type;
+    document.getElementById('rec-date-'+pid).value = r.date;
+    document.getElementById('rec-appt-'+pid).value = r.next_appointment || '';
+    document.getElementById('rec-doctor-'+pid).value = r.doctor || '';
+    document.getElementById('rec-hospital-'+pid).value = r.hospital || '';
+    document.getElementById('rec-diagnosis-'+pid).value = r.diagnosis || '';
+    document.getElementById('rec-meds-'+pid).value = r.medications || '';
+  }, 400);
+}
+async function saveHealthRecord(pid) {
+  const body = { entry_type: document.getElementById('rec-type-'+pid).value.trim(), date: document.getElementById('rec-date-'+pid).value, doctor: document.getElementById('rec-doctor-'+pid).value || null, hospital: document.getElementById('rec-hospital-'+pid).value || null, diagnosis: document.getElementById('rec-diagnosis-'+pid).value || null, medications: document.getElementById('rec-meds-'+pid).value || null, next_appointment: document.getElementById('rec-appt-'+pid).value || null };
+  if (!body.entry_type || !body.date) { toast('Type and date are required','error'); return; }
+  try {
+    if (_editRecId && _editRecPid === pid) { await apiCall('/health/records/'+_editRecId,'PUT',body); _editRecId = null; toast('Record updated!'); }
+    else { await apiCall('/health/profiles/'+pid+'/records','POST',body); toast('Record added!'); }
+    toggleHealthRecords(pid); _openRecords[pid] = true; setTimeout(()=>toggleHealthRecords(pid), 50); _openRecords[pid] = true;
+  } catch(e) { toast(e.message,'error'); }
+}
+async function deleteHealthRecord(rid, pid) {
+  if (!confirm('Delete this medical record? This cannot be undone.')) return;
+  try { await apiCall('/health/records/'+rid,'DELETE'); toast('Record deleted.'); _openRecords[pid] = false; toggleHealthRecords(pid); } catch(e) { toast(e.message,'error'); }
 }
 
 // ===== DOCUMENTS =====
@@ -982,7 +1147,7 @@ async function loadDocuments() {
       <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Expiring</p><p class="text-xl font-bold text-orange-500 mt-1">${s.expiring_soon}</p></div>`;
     const tb = document.getElementById('doc-tbody');
     if (!docs.length) { tb.innerHTML = '<tr><td colspan="5" class="empty-state">No documents yet.</td></tr>'; return; }
-    tb.innerHTML = docs.map(d => `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${d.name}</td><td class="px-4 py-3 text-sm">${d.category}</td><td class="px-4 py-3 text-sm">${fmtDate(d.uploaded_at)}</td><td class="px-4 py-3 text-sm">${((d.file_size||0)/1024).toFixed(0)} KB</td><td class="px-4 py-3"><a href="/api/documents/${d.id}/download" class="text-blue-600 text-sm hover:underline">Download</a></td></tr>`).join('');
+    tb.innerHTML = docs.map(d => `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${d.name}</td><td class="px-4 py-3 text-sm">${d.category}</td><td class="px-4 py-3 text-sm">${fmtDate(d.uploaded_at)}</td><td class="px-4 py-3 text-sm">${((d.file_size||0)/1024).toFixed(0)} KB</td><td class="px-4 py-3 whitespace-nowrap"><a href="/api/documents/${d.id}/download" class="text-blue-600 text-sm hover:underline mr-2">Download</a><button onclick="editDocument(${d.id}, '${(d.name||'').replace(/'/g,"\\'")}')" class="text-gray-500 text-sm hover:underline mr-2">Edit</button><button onclick="deleteDocument(${d.id}, '${(d.name||'').replace(/'/g,"\\'")}')" class="text-red-500 text-sm hover:underline">Delete</button></td></tr>`).join('');
   } catch(e) { toast(e.message,'error'); }
 }
 async function uploadDocument() {
@@ -997,6 +1162,15 @@ async function uploadDocument() {
     if (!resp.ok) throw new Error('Upload failed');
     toast('Document uploaded!'); showScreen('documents');
   } catch(e) { toast(e.message,'error'); }
+}
+async function editDocument(id, name) {
+  const newName = prompt('Rename document:', name);
+  if (newName === null || newName.trim() === '' || newName === name) return;
+  try { await apiCall('/documents/'+id,'PUT',{ name: newName.trim() }); toast('Document renamed.'); loadDocuments(); } catch(e) { toast(e.message,'error'); }
+}
+async function deleteDocument(id, name) {
+  if (!confirm('Delete \u201c' + name + '\u201d? The file will be removed from storage. This cannot be undone.')) return;
+  try { await apiCall('/documents/'+id,'DELETE'); toast('Document deleted.'); loadDocuments(); } catch(e) { toast(e.message,'error'); }
 }
 
 // ===== CALENDAR =====

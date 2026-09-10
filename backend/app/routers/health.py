@@ -74,6 +74,33 @@ def create_record(pid: int, payload: HealthRecordCreate, db: Session = Depends(g
     return obj
 
 
+def _own_record(rid: int, user: User, db: Session) -> HealthRecord:
+    rec = db.query(HealthRecord).join(HealthProfile, HealthRecord.profile_id == HealthProfile.id).filter(
+        HealthRecord.id == rid, HealthProfile.user_id == user.id).first()
+    if not rec:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return rec
+
+
+@router.put("/records/{rid}", response_model=HealthRecordResponse)
+def update_record(rid: int, payload: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    rec = _own_record(rid, user, db)
+    for k, v in payload.items():
+        if hasattr(HealthRecord, k) and k not in ("id", "profile_id", "created_at"):
+            setattr(rec, k, v)
+    db.commit()
+    db.refresh(rec)
+    return rec
+
+
+@router.delete("/records/{rid}")
+def delete_record(rid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    rec = _own_record(rid, user, db)
+    db.delete(rec)
+    db.commit()
+    return {"deleted": True}
+
+
 @router.get("/summary")
 def health_summary(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     profiles = db.query(HealthProfile).filter(HealthProfile.user_id == user.id).all()
