@@ -18,6 +18,7 @@
 input,select,textarea{transition:border-color .2s}input:focus,select:focus,textarea:focus{border-color:#3498db;outline:none;box-shadow:0 0 0 2px rgba(52,152,219,.15)}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#bdc3c7;border-radius:3px}
 .toast{position:fixed;top:20px;right:20px;z-index:999;padding:12px 20px;border-radius:8px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);animation:slideIn .3s ease}
+elevenlabs-convai{position:fixed!important;bottom:152px!important;right:24px!important;z-index:998!important}
 .toast-success{background:#27ae60;color:#fff}.toast-error{background:#e74c3c;color:#fff}.toast-info{background:#3498db;color:#fff}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 .loading{display:inline-block;width:20px;height:20px;border:3px solid #e0e0e0;border-top:3px solid #1a5276;border-radius:50%;animation:spin 1s linear infinite}
@@ -1223,11 +1224,11 @@ function handleVoiceNavigation(screen, data) {
         if (data && (data.created || data.action_done || data.updated)) {
             // Item was created/updated/actioned by voice agent — show toast + reload screen data
             const msg = data.message || (data.created ? ('Created new ' + screen + ' item') : ('Updated ' + screen + ' item'));
-            showToast('✅ ' + msg, 'success');
+            toast('✅ ' + msg, 'success');
             setTimeout(() => reloadScreenData(screen), 300);
         } else if (screen === 'reports' && data && data.period) {
             // Voice agent requested a report for a date range — set period dropdown + reload
-            showToast('📊 Loading reports...', 'info');
+            toast('📊 Loading reports...', 'info');
             setTimeout(() => {
                 const sel = document.getElementById('report-period');
                 if (sel && data.period.from) {
@@ -1237,7 +1238,7 @@ function handleVoiceNavigation(screen, data) {
                 loadReports();
             }, 200);
         } else {
-            showToast('🎤 Voice: Navigating to ' + screen, 'info');
+            toast('🎤 Voice: Navigating to ' + screen, 'info');
         }
     } else {
         const navItem = document.getElementById('nav-' + screen);
@@ -1268,5 +1269,10 @@ if (document.readyState === 'loading') {
 }
 
 </script>
+<!-- ElevenLabs ConvAI widget — positioned above the LifeOS (L) voice button -->
+<div id="el-convai-widget">
+  <elevenlabs-convai agent-id="agent_9801m25ch64qeeftaw9w7ensnzv1" />
+</div>
+<script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
 </body>
 </html>

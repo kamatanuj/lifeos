@@ -50,9 +50,20 @@ def push_navigation(screen: str, action: str = "navigate", data: dict = None):
         "timestamp": datetime.now().isoformat(),
         "data": data or {},
     }
+    payload = json.dumps(latest_nav)
     for conn in list(active_connections):
         try:
-            asyncio.create_task(conn.send_text(json.dumps(latest_nav)))
+            loop = conn.loop if hasattr(conn, "loop") and conn.loop else asyncio.get_event_loop()
+            # Safe from both async and sync (threadpool) contexts: if we're on the loop's thread
+            # create a task; otherwise schedule it onto the running loop via call_soon_threadsafe.
+            try:
+                running = asyncio.get_running_loop()
+            except RuntimeError:
+                running = None
+            if running is loop:
+                asyncio.create_task(conn.send_text(payload))
+            else:
+                loop.call_soon_threadsafe(lambda c=conn, p=payload: asyncio.create_task(c.send_text(p)))
         except Exception:
             if conn in active_connections:
                 active_connections.remove(conn)
