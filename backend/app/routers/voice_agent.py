@@ -37,8 +37,20 @@ SCREEN_TABLES = {
 
 
 @router.get("/navigate")
-def navigate_screen(screen: str = Query(...), db: Session = Depends(get_db), user: User = Depends(_check_auth)):
-    """Navigate to any LifeOS screen — returns screen metadata and summary data"""
+def navigate_screen(request: StarletteRequest, db: Session = Depends(get_db), user: User = Depends(_check_auth)):
+    """Navigate to any LifeOS screen — returns screen metadata and summary data.
+
+    Accepts the target screen from any common param name (screen, name, to, target, page,
+    destination) so agents that misname the argument still work."""
+    params = dict(request.query_params)
+    screen = None
+    for key in ("screen", "name", "to", "target", "page", "destination", "destination_screen", "screen_name"):
+        val = (params.get(key) or "").strip()
+        if val:
+            screen = val
+            break
+    if not screen:
+        return {"error": "Missing screen name. Tell me which screen, e.g. bills, obligations, dashboard.", "valid_screens": ["dashboard","calendar","search","bills","obligations","insurance","properties","maintenance","health","documents","reports","settings","users","bill-new","obligation-new","insurance-new","property-new","maintenance-new","health-new","document-new"]}
     screen = screen.lower().strip()
     
     # Form screens return form metadata
