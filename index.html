@@ -18,7 +18,7 @@
 input,select,textarea{transition:border-color .2s}input:focus,select:focus,textarea:focus{border-color:#3498db;outline:none;box-shadow:0 0 0 2px rgba(52,152,219,.15)}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#bdc3c7;border-radius:3px}
 .toast{position:fixed;top:20px;right:20px;z-index:999;padding:12px 20px;border-radius:8px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);animation:slideIn .3s ease}
-elevenlabs-convai{position:fixed!important;bottom:152px!important;right:24px!important;z-index:998!important}
+elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!important;z-index:998!important}
 .toast-success{background:#27ae60;color:#fff}.toast-error{background:#e74c3c;color:#fff}.toast-info{background:#3498db;color:#fff}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 .loading{display:inline-block;width:20px;height:20px;border:3px solid #e0e0e0;border-top:3px solid #1a5276;border-radius:50%;animation:spin 1s linear infinite}
@@ -604,7 +604,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </button>
 -->
 
-<div id="local-agent-btn" onclick="startLocalVoice()" title="Talk to LifeOS Assistant (Local)" style="position:fixed;bottom:92px;right:28px;z-index:1000000;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0e6655,#16a085);border:none;cursor:pointer;box-shadow:0 4px 18px rgba(14,102,85,0.45);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;letter-spacing:.5px">L</div>
 <script>
 // Dograh Cloud widget — loads the green "Talk to Agent" button
 const CONVERSO_EMBED_TOKEN = 'emb_0kXojx1ep-hotGl2IYgKdnKVnkmUt_kUpdbeWhx87as';
@@ -645,30 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // The Converso widget calls server-side HTTP tools that push navigation via the nav-status API
 // The polling listener (already in the page) picks up navigation commands and calls showScreen()
 </script>
-<script>
-// ===== LOCAL Converso widget (converso.work) — independent of Dograh Cloud =====
-// Start the LOCAL LifeOS agent (workflow 1, BYOK: ollama glm-5.3-flash + deepgram + elevenlabs)
-const LOCAL_EMBED_TOKEN = 'emb_mxy89WFE8Dgj2CBRUEFmW95F8d2EJD14ySFfzErjHpg';
-const LOCAL_API_HOST = 'converso.work';
 
-window.addEventListener('DOMContentLoaded', function() {
-  if (new URLSearchParams(window.location.search).get('voice') === 'local') {
-    setTimeout(startLocalVoice, 600);
-  }
-});
-function startLocalVoice() {
-  // Remove any existing widget instance (fixed element ids collide between loads)
-  ['#dograh-widget-root', '#dograh-widget-styles', '#dograh-inline-styles', '#dograh-widget-cta'].forEach(function(sel) {
-    var el = document.querySelector(sel); if (el) el.remove();
-  });
-  document.querySelectorAll('script[id^="converso-widget"]').forEach(function(s) { s.remove(); });
-  var s = document.createElement('script');
-  s.id = 'converso-widget-local';
-  s.src = 'https://app.dograh.com/embed/dograh-widget.js?token=' + LOCAL_EMBED_TOKEN + '&apiEndpoint=' + LOCAL_API_HOST;
-  s.async = true;
-  document.body.appendChild(s);
-}
-</script>
 
 
 <script>
