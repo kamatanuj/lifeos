@@ -32,7 +32,7 @@ def create_bill(payload: BillCreate, db: Session = Depends(get_db), user: User =
 @router.get("/summary")
 def bill_summary(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     bills = db.query(Bill).filter(Bill.user_id == user.id).all()
-    total_due = sum(b.amount for b in bills if b.status == "pending")
+    total_due = sum(b.amount for b in bills if b.status in ("pending", "overdue"))
     paid_this_month = sum(b.paid_amount or 0 for b in bills if b.status == "paid" and b.paid_date and b.paid_date.month == date.today().month)
     upcoming = sum(1 for b in bills if b.status == "pending")
     overdue = sum(1 for b in bills if b.status == "overdue")

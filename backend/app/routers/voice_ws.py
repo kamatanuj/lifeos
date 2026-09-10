@@ -1,7 +1,7 @@
 """WebSocket for voice agent → frontend screen navigation"""
 import asyncio
 import json
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from datetime import datetime
 
 router = APIRouter()
@@ -9,17 +9,28 @@ router = APIRouter()
 # Store active WebSocket connections
 active_connections: list[WebSocket] = []
 
-# Store the latest navigation command (for polling fallback)
+# Latest navigation command issued by the voice agent (polling fallback).
+# A page only auto-navigates to this when the command is NEWER than the moment
+# the page itself loaded — otherwise a fresh open of the app would instantly be
+# yanked off the default Dashboard to whatever screen some earlier voice session
+# (possibly hours ago) last touched. The page sends its load time on connect /
+# in the poll query, and only commands newer than that are ever delivered.
 latest_nav: dict = {"action": "none", "screen": "dashboard", "timestamp": "", "data": {}}
 
 
 @router.websocket("/api/voice/ws")
 async def voice_ws(websocket: WebSocket):
+    """Voice-nav WebSocket. The page appends ?since=<ISO timestamp> (its own
+    load time); only commands newer than that are replayed on connect."""
     await websocket.accept()
+    # 'since' = page load time. Commands at/before it are history, not live.
+    since = websocket.query_params.get("since", "") or ""
     active_connections.append(websocket)
     try:
-        # Send the latest nav on connect
-        await websocket.send_text(json.dumps(latest_nav))
+        # Replay the latest nav on connect ONLY if it is newer than the page.
+        if (latest_nav.get("action") == "navigate" and latest_nav.get("timestamp")
+                and (not since or latest_nav["timestamp"] > since)):
+            await websocket.send_text(json.dumps(latest_nav))
         while True:
             await asyncio.sleep(30)  # keep alive
     except WebSocketDisconnect:
@@ -48,6 +59,14 @@ def push_navigation(screen: str, action: str = "navigate", data: dict = None):
 
 
 @router.get("/api/voice/nav-status")
-def nav_status():
-    """Polling fallback: get the latest navigation command"""
-    return latest_nav
+def nav_status(since: str = Query("")):
+    """Polling fallback: get the latest navigation command.
+
+    The page passes 'since' = the timestamp the page loaded (ISO). A command
+    at/before that moment is history from a previous session and is suppressed,
+    so a fresh page open always lands on the default Dashboard.
+    """
+    nav = latest_nav
+    if since and nav.get("timestamp") and nav["timestamp"] <= since:
+        nav = {**nav, "action": "none"}
+    return nav

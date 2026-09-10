@@ -205,7 +205,7 @@ input,select,textarea{transition:border-color .2s}input:focus,select:focus,texta
 <div class="screen" id="screen-obligations">
 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Recurring Obligations</h2><button onclick="showScreen('obligation-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Obligation</button></div>
 <div class="grid grid-cols-3 gap-4 mb-6" id="obl-summary"></div>
-<div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Obligation</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Due</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th></tr></thead><tbody id="obl-tbody"></tbody></table></div>
+<div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Obligation</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Due</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th></tr></thead><tbody id="obl-tbody"></tbody></table></div>
 </div>
 
 <!-- OBLIGATION NEW -->
@@ -659,8 +659,14 @@ async function apiCall(endpoint, method='GET', body=null) {
   if (body) opts.body = JSON.stringify(body);
   const resp = await fetch(API + endpoint, opts);
   if (resp.status === 401) { logout(); throw new Error('Unauthorized'); }
-  if (!resp.ok) { const err = await resp.json().catch(() => ({detail:'Error'})); throw new Error(err.detail || 'Request failed'); }
+  if (!resp.ok) { const err = await resp.json().catch(() => ({detail:'Error'})); throw new Error(fmtErr(err.detail)); }
   return resp.json();
+}
+function fmtErr(detail) {
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) return detail.map(d => d.msg ? `${(d.loc||[]).slice(-2).join('.')}: ${d.msg}` : JSON.stringify(d)).join('; ');
+  if (detail && typeof detail === 'object') { if (detail.detail) return fmtErr(detail.detail); return JSON.stringify(detail); }
+  return 'Request failed';
 }
 function fmtDate(d) { if(!d) return '—'; const dt = new Date(d); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
 function fmtMoney(n) { return '₹' + (n||0).toLocaleString('en-IN'); }
@@ -755,7 +761,7 @@ async function loadDashboard() {
     const s = data.summary;
     document.getElementById('dash-cards').innerHTML = `
       <div class="card bg-white rounded-xl p-5 cursor-pointer" onclick="showScreen('bills')"><p class="text-sm text-gray-500">Due This Week</p><p class="text-2xl font-bold mt-1">${s.due_this_week}</p></div>
-      <div class="card bg-white rounded-xl p-5 cursor-pointer" onclick="showScreen('bills')"><p class="text-sm text-gray-500">Bills (Month)</p><p class="text-2xl font-bold mt-1">${fmtMoney(s.total_bills_month)}</p></div>
+      <div class="card bg-white rounded-xl p-5 cursor-pointer" onclick="showScreen('bills')"><p class="text-sm text-gray-500">Monthly Outgo</p><p class="text-2xl font-bold mt-1">${fmtMoney(s.monthly_outgo ?? s.total_bills_month)}</p><p class="text-xs text-gray-400 mt-1">Bills ₹${(s.total_bills_month||0).toLocaleString('en-IN')} + Obligations ₹${(s.obligations_month_total||0).toLocaleString('en-IN')}</p></div>
       <div class="card bg-white rounded-xl p-5 cursor-pointer" onclick="showScreen('properties')"><p class="text-sm text-gray-500">Properties</p><p class="text-2xl font-bold mt-1">${s.properties_count}</p></div>
       <div class="card bg-white rounded-xl p-5 cursor-pointer" onclick="showScreen('health')"><p class="text-sm text-gray-500">Health Reminders</p><p class="text-2xl font-bold mt-1">${s.health_reminders}</p></div>`;
     // Upcoming
@@ -791,7 +797,11 @@ async function saveBill() {
   try { await apiCall('/bills','POST',body); toast('Bill saved!'); showScreen('bills'); } catch(e) { toast(e.message,'error'); }
 }
 async function payBill(id) {
-  try { await apiCall('/bills/'+id+'/pay','POST'); toast('Bill marked as paid!'); loadBills(); } catch(e) { toast(e.message,'error'); }
+  try {
+    const bill = (await apiCall('/bills')).find(b => b.id === id) || {};
+    await apiCall('/bills/'+id+'/pay','POST',{ amount: bill.amount ?? 0, paid_date: new Date().toISOString().slice(0,10), payment_method: bill.payment_method || 'online' });
+    toast('Bill marked as paid!'); loadBills(); loadDashboard();
+  } catch(e) { toast(e.message,'error'); }
 }
 
 // ===== OBLIGATIONS =====
@@ -804,15 +814,23 @@ async function loadObligations() {
       <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Monthly Total</p><p class="text-xl font-bold mt-1">${fmtMoney(s.monthly_total)}</p></div>
       <div class="card bg-white rounded-xl p-4"><p class="text-sm text-gray-500">Overdue</p><p class="text-xl font-bold text-red-500 mt-1">${s.overdue}</p></div>`;
     const tb = document.getElementById('obl-tbody');
-    if (!obs.length) { tb.innerHTML = '<tr><td colspan="6" class="empty-state">No obligations yet.</td></tr>'; return; }
-    tb.innerHTML = obs.map(o => `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${o.name}</td><td class="px-4 py-3 text-sm">${o.category||'—'}</td><td class="px-4 py-3 text-sm font-medium">${fmtMoney(o.amount)}</td><td class="px-4 py-3 text-sm">${o.frequency}</td><td class="px-4 py-3 text-sm">${fmtDate(o.next_due_date)}</td><td class="px-4 py-3"><button onclick="markOblPaid(${o.id})" class="text-blue-600 text-sm hover:underline">Mark Paid</button></td></tr>`).join('');
+    if (!obs.length) { tb.innerHTML = '<tr><td colspan="7" class="empty-state">No obligations yet.</td></tr>'; return; }
+    tb.innerHTML = obs.map(o => {
+      const paidThisCycle = o.last_paid_date && o.next_due_date && new Date(o.next_due_date+'T00:00:00') > new Date(Date.now() - 86400000);
+      const status = paidThisCycle ? '<span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">PAID</span>' : '<span class="bg-orange-50 text-orange-600 text-xs px-2 py-1 rounded">DUE</span>';
+      const action = paidThisCycle
+        ? `<button onclick="markOblUnpaid(${o.id})" class="text-gray-500 text-sm hover:underline">Mark Unpaid</button>`
+        : `<button onclick="markOblPaid(${o.id})" class="text-blue-600 text-sm hover:underline">Mark Paid</button>`;
+      return `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3 text-sm">${o.name}</td><td class="px-4 py-3 text-sm">${o.category||'—'}</td><td class="px-4 py-3 text-sm font-medium">${fmtMoney(o.amount)}</td><td class="px-4 py-3 text-sm">${o.frequency}</td><td class="px-4 py-3 text-sm">${fmtDate(o.next_due_date)}</td><td class="px-4 py-3">${status}</td><td class="px-4 py-3">${action}</td></tr>`;
+    }).join('');
   } catch(e) { toast(e.message,'error'); }
 }
 async function saveObligation() {
   const body = { name: val('obl-name'), category: val('obl-category'), amount: parseFloat(val('obl-amount')), frequency: val('obl-freq'), next_due_date: val('obl-due'), is_active: true };
   try { await apiCall('/obligations','POST',body); toast('Obligation saved!'); showScreen('obligations'); } catch(e) { toast(e.message,'error'); }
 }
-async function markOblPaid(id) { try { await apiCall('/obligations/'+id+'/mark-paid','POST'); toast('Marked as paid!'); loadObligations(); } catch(e) { toast(e.message,'error'); } }
+async function markOblPaid(id) { try { await apiCall('/obligations/'+id+'/mark-paid','POST'); toast('Marked as paid!'); loadObligations(); loadDashboard(); } catch(e) { toast(e.message,'error'); } }
+async function markOblUnpaid(id) { try { await apiCall('/obligations/'+id+'/mark-unpaid','POST'); toast('Marked as unpaid.'); loadObligations(); loadDashboard(); } catch(e) { toast(e.message,'error'); } }
 
 // ===== INSURANCE =====
 async function loadInsurance() {
@@ -1045,18 +1063,27 @@ function val(id) { return document.getElementById(id)?.value || ''; }
 
 // === Voice Agent Navigation Listener ===
 let voiceNavWS = null;
-let lastNavTimestamp = '';
+// Voice agent navigation listener. Each page instance records its own load
+// time (pageLoadTime) and only ever applies nav commands ISSUED AFTER it —
+// commands from before the page loaded are history from a previous session,
+// so a fresh open always lands on the default Dashboard.
+let lastNavTimestamp = null;
+const pageLoadTime = new Date(Date.now() - Date.now() % 1000).toISOString();
 let voiceNavPollTimer = null;
 
 function initVoiceNavigation() {
-    // Connect WebSocket
-    const wsUrl = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/api/voice/ws';
+    // Connect WebSocket — 'since' tells the server when THIS page loaded, so it
+    // only replays voice-nav commands issued after the page opened.
+    const wsUrl = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/api/voice/ws?since=' + encodeURIComponent(pageLoadTime);
     try {
         voiceNavWS = new WebSocket(wsUrl);
         voiceNavWS.onmessage = function(event) {
             try {
                 const data = JSON.parse(event.data);
-                if (data.action === 'navigate' && data.timestamp !== lastNavTimestamp) {
+                // Ignore replayed/stale nav commands (e.g. the on-connect echo):
+                // only act when this command is newer than the last one applied.
+                if (data.action === 'navigate' && data.timestamp && data.timestamp !== lastNavTimestamp &&
+                    (!lastNavTimestamp || data.timestamp > lastNavTimestamp)) {
                     lastNavTimestamp = data.timestamp;
                     handleVoiceNavigation(data.screen, data.data);
                 }
@@ -1083,9 +1110,11 @@ function startNavPolling() {
     if (voiceNavPollTimer) return; // already polling
     voiceNavPollTimer = setInterval(async () => {
         try {
-            const resp = await fetch('/api/voice/nav-status');
+            const q = '?since=' + encodeURIComponent(pageLoadTime);
+            const resp = await fetch('/api/voice/nav-status' + q);
             const data = await resp.json();
-            if (data.action === 'navigate' && data.timestamp && data.timestamp !== lastNavTimestamp) {
+            if (data.action === 'navigate' && data.timestamp && data.timestamp !== lastNavTimestamp &&
+                (!lastNavTimestamp || data.timestamp > lastNavTimestamp)) {
                 lastNavTimestamp = data.timestamp;
                 handleVoiceNavigation(data.screen, data.data);
             }

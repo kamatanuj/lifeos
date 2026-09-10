@@ -22,7 +22,10 @@ def dashboard(db: Session = Depends(get_db), user: User = Depends(get_current_us
     health_profiles = db.query(HealthProfile).filter(HealthProfile.user_id == user.id).all()
 
     due_this_week = sum(1 for b in bills if b.status == "pending" and b.due_date and today <= b.due_date <= week_later)
-    total_bills_month = sum(b.amount for b in bills if b.due_date and b.due_date.month == today.month)
+    # Calendar-month figures: bills (pending+overdue only per user rule) + obligations due this month
+    total_bills_month = sum(b.amount for b in bills if b.due_date and b.due_date.month == today.month and b.due_date.year == today.year and b.status in ("pending", "overdue"))
+    obligations_month_total = sum(o.amount for o in obligations if o.next_due_date and o.next_due_date.month == today.month and o.next_due_date.year == today.year)
+    monthly_outgo = total_bills_month + obligations_month_total
     health_reminders = sum(1 for p in health_profiles for r in p.records if r.next_appointment and today <= r.next_appointment <= week_later)
 
     # Upcoming due dates (next 5)
@@ -48,6 +51,8 @@ def dashboard(db: Session = Depends(get_db), user: User = Depends(get_current_us
         "summary": {
             "due_this_week": due_this_week,
             "total_bills_month": total_bills_month,
+            "obligations_month_total": obligations_month_total,
+            "monthly_outgo": monthly_outgo,
             "properties_count": len(properties),
             "health_reminders": health_reminders,
         },
