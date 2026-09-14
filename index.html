@@ -4,29 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LifeOS — Personal Management Dashboard</title>
+<link rel="stylesheet" href="assets/design-tokens.css">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="assets/tailwind.js"></script>
 <script src="assets/chart.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-*{font-family:'Inter',sans-serif}body{background:#f0f2f5}
-.sidebar-link{transition:all .2s}.sidebar-link:hover{background:#1e3a5f}.sidebar-link.active{background:#1a5276;border-left:3px solid #3498db}
+
+/* fonts+tokens come from assets/design-tokens.css (Fira Sans) */
+*{font-family:inherit}body{background:var(--color-background)}
+.sidebar-link{transition:all .2s}.sidebar-link:hover{background:var(--color-nav-hover)}.sidebar-link.active{background:var(--color-nav-active);border-left:3px solid var(--color-primary)}
 .card{box-shadow:0 1px 3px rgba(0,0,0,.1);transition:box-shadow .2s}.card:hover{box-shadow:0 4px 12px rgba(0,0,0,.15)}
 .card[onclick]{cursor:pointer}.card[onclick]:active{transform:scale(.98);transition:transform .1s}
 .screen{display:none}.screen.active{display:block}
-.badge-overdue{background:#e74c3c;color:#fff}.badge-due{background:#f39c12;color:#fff}.badge-paid{background:#27ae60;color:#fff}.badge-upcoming{background:#3498db;color:#fff}
-.tab-active{border-bottom:3px solid #1a5276;color:#1a5276;font-weight:600}
-input,select,textarea{transition:border-color .2s}input:focus,select:focus,textarea:focus{border-color:#3498db;outline:none;box-shadow:0 0 0 2px rgba(52,152,219,.15)}
+.badge-overdue{background:#e74c3c;color:#fff}.badge-due{background:#f39c12;color:#fff}.badge-paid{background:#27ae60;color:#fff}.badge-upcoming{background:var(--color-primary);color:#fff}
+.tab-active{border-bottom:3px solid var(--color-nav-active);color:var(--color-nav-active);font-weight:600}
+input,select,textarea{transition:border-color .2s}input:focus,select:focus,textarea:focus{border-color:var(--color-primary);outline:none;box-shadow:0 0 0 2px rgba(52,152,219,.15)}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#bdc3c7;border-radius:3px}
 .toast{position:fixed;top:20px;right:20px;z-index:999;padding:12px 20px;border-radius:8px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);animation:slideIn .3s ease}
 elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!important;z-index:998!important}
-.toast-success{background:#27ae60;color:#fff}.toast-error{background:#e74c3c;color:#fff}.toast-info{background:#3498db;color:#fff}
+.toast-success{background:#27ae60;color:#fff}.toast-error{background:#e74c3c;color:#fff}.toast-info{background:var(--color-primary);color:#fff}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-.loading{display:inline-block;width:20px;height:20px;border:3px solid #e0e0e0;border-top:3px solid #1a5276;border-radius:50%;animation:spin 1s linear infinite}
+.loading{display:inline-block;width:20px;height:20px;border:3px solid #e0e0e0;border-top:3px solid var(--color-nav-active);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .empty-state{text-align:center;padding:40px;color:#999}
 .empty-state svg{width:48px;height:48px;margin:0 auto 12px;opacity:.3}
 /* MOBILE */
-.mobile-menu-btn{display:none;align-items:center;justify-content:center;width:40px;height:40px;background:#1a5276;color:#fff;border-radius:8px;cursor:pointer;border:none;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.mobile-menu-btn{display:none;align-items:center;justify-content:center;width:40px;height:40px;background:var(--color-nav-active);color:#fff;border-radius:8px;cursor:pointer;border:none;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 @media(max-width:768px){
   /* Layout shell */
   .sidebar{position:fixed;left:-280px;top:0;height:100vh;width:260px;z-index:200;transition:left .3s ease;box-shadow:4px 0 16px rgba(0,0,0,.2)}
@@ -78,7 +81,7 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
   .mobile-menu-btn{top:calc(env(safe-area-inset-top,0px) + 12px);left:calc(env(safe-area-inset-left,0px) + 12px)}
   .toast{top:calc(env(safe-area-inset-top,0px) + 64px)}
   body.sidebar-lock{overflow:hidden}
-  .sidebar-link:active{background:#1a5276}
+  .sidebar-link:active{background:var(--color-nav-active)}
   .sidebar-link{padding-top:.65rem!important;padding-bottom:.65rem!important} /* bigger touch targets */
 }
 @media(max-width:360px){
@@ -94,7 +97,7 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div id="toast-container"></div>
 
 <!-- LOGIN SCREEN -->
-<div id="login-screen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0d2745] to-[#1a5276]">
+<div id="login-screen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0d2745] to-[var(--color-nav-active)]">
 <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
 <div class="text-center mb-8">
 <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-3xl font-bold text-white mx-auto mb-4">L</div>
@@ -104,14 +107,14 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div id="login-form" class="space-y-4">
 <div><label class="text-sm font-medium text-gray-700">Email</label><input id="login-email" type="email" placeholder="you@example.com" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 <div><label class="text-sm font-medium text-gray-700">Password</label><input id="login-password" type="password" placeholder="••••••••" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<button id="btn-login" class="w-full bg-[#1a5276] text-white py-2.5 rounded-lg font-medium hover:bg-[#0d2745] transition">Sign In</button>
+<button id="btn-login" class="w-full bg-[var(--color-nav-active)] text-white py-2.5 rounded-lg font-medium hover:bg-[#0d2745] transition">Sign In</button>
 <p class="text-center text-sm text-gray-500 mt-4">Don't have an account? <a href="#" onclick="toggleRegister()" class="text-blue-600 hover:underline">Sign up</a></p>
 </div>
 <div id="register-form" class="space-y-4 hidden">
 <div><label class="text-sm font-medium text-gray-700">Name</label><input id="reg-name" type="text" placeholder="Your name" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 <div><label class="text-sm font-medium text-gray-700">Email</label><input id="reg-email" type="email" placeholder="you@example.com" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 <div><label class="text-sm font-medium text-gray-700">Password</label><input id="reg-password" type="password" placeholder="••••••••" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
-<button id="btn-register" class="w-full bg-[#1a5276] text-white py-2.5 rounded-lg font-medium hover:bg-[#0d2745] transition">Create Account</button>
+<button id="btn-register" class="w-full bg-[var(--color-nav-active)] text-white py-2.5 rounded-lg font-medium hover:bg-[#0d2745] transition">Create Account</button>
 <p class="text-center text-sm text-gray-500 mt-4">Already have an account? <a href="#" onclick="toggleRegister()" class="text-blue-600 hover:underline">Sign in</a></p>
 </div>
 </div>
@@ -124,7 +127,7 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:150"></div>
 <!-- SIDEBAR -->
 <aside class="sidebar w-64 bg-[#0d2745] text-white flex flex-col flex-shrink-0 overflow-y-auto" id="sidebar">
-<div class="p-5 border-b border-[#1e3a5f]"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-xl font-bold">L</div><div><div class="font-bold text-lg">LifeOS</div><div class="text-xs text-blue-300">Personal Management</div></div></div></div>
+<div class="p-5 border-b border-[var(--color-nav-hover)]"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-xl font-bold">L</div><div><div class="font-bold text-lg">LifeOS</div><div class="text-xs text-blue-300">Personal Management</div></div></div></div>
 <nav class="flex-1 py-2">
 <div class="px-4 py-2 text-xs text-blue-300 uppercase tracking-wider">Overview</div>
 <a href="#" onclick="showScreen('dashboard')" class="sidebar-link active flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-dashboard">📊 Dashboard</a>
@@ -148,14 +151,14 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
       <a href="#" onclick="showScreen('settings')" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm" id="nav-settings">⚙️ Settings</a>
       <a href="#" onclick="logout()" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm">🚪 Logout</a>
 </nav>
-<div class="p-4 border-t border-[#1e3a5f]"><div class="flex items-center gap-3"><div class="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center font-semibold" id="user-avatar">U</div><div><div class="text-sm font-medium" id="user-name">User</div><div class="text-xs text-blue-300" id="user-email">user@example.com</div></div></div></div>
+<div class="p-4 border-t border-[var(--color-nav-hover)]"><div class="flex items-center gap-3"><div class="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center font-semibold" id="user-avatar">U</div><div><div class="text-sm font-medium" id="user-name">User</div><div class="text-xs text-blue-300" id="user-email">user@example.com</div></div></div></div>
 </aside>
 
 <!-- MAIN -->
 <main class="flex-1 overflow-y-auto bg-[#f0f2f5]">
 <div class="bg-white shadow-sm px-6 py-3 flex items-center justify-between sticky top-0 z-10">
 <div class="flex items-center gap-3">
-<button onclick="showScreen('dashboard')" title="Go to Dashboard" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background:#1a5276;color:#fff;border-radius:8px;border:none;cursor:pointer;font-size:16px" onmouseover="this.style.background='#0d2745'" onmouseout="this.style.background='#1a5276'">🏠</button>
+<button onclick="showScreen('dashboard')" title="Go to Dashboard" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background:var(--color-nav-active);color:#fff;border-radius:8px;border:none;cursor:pointer;font-size:16px" onmouseover="this.style.background='#0d2745'" onmouseout="this.style.background='var(--color-nav-active)'">🏠</button>
 <h1 id="page-title" class="text-lg font-semibold text-gray-800">Dashboard</h1>
 </div>
 <div class="flex items-center gap-4">
@@ -182,7 +185,7 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 
 <!-- BILLS -->
 <div class="screen" id="screen-bills">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Bill Payments</h2><button onclick="resetBillForm()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Bill</button></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Bill Payments</h2><button onclick="resetBillForm()" class="bg-[var(--color-nav-active)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Bill</button></div>
 <div class="grid grid-cols-4 gap-4 mb-6" id="bills-summary"></div>
 <div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bill Type</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3"></th></tr></thead><tbody id="bills-tbody"></tbody></table></div>
 </div>
@@ -199,13 +202,13 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div><label class="text-sm font-medium text-gray-700">Payment Method</label><select id="bill-method" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>upi_gpay</option><option>upi_phonepe</option><option>credit_card</option><option>net_banking</option><option>auto_pay</option><option>cash</option></select></div>
 <div><label class="text-sm font-medium text-gray-700">Frequency</label><select id="bill-freq" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>monthly</option><option>quarterly</option><option>half_yearly</option><option>yearly</option><option>one_time</option></select></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="saveBill()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save Bill</button><button onclick="showScreen('bills')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveBill()" class="bg-[var(--color-nav-active)] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save Bill</button><button onclick="showScreen('bills')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
 <!-- OBLIGATIONS -->
 <div class="screen" id="screen-obligations">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Recurring Obligations</h2><button onclick="resetOblForm()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Obligation</button></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Recurring Obligations</h2><button onclick="resetOblForm()" class="bg-[var(--color-nav-active)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Obligation</button></div>
 <div class="grid grid-cols-3 gap-4 mb-6" id="obl-summary"></div>
 <div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Obligation</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Due</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th></tr></thead><tbody id="obl-tbody"></tbody></table></div>
 </div>
@@ -221,13 +224,13 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div><label class="text-sm font-medium text-gray-700">Frequency</label><select id="obl-freq" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>monthly</option><option>quarterly</option><option>half_yearly</option><option>yearly</option></select></div>
 <div><label class="text-sm font-medium text-gray-700">Next Due Date</label><input id="obl-due" type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="saveObligation()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('obligations')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveObligation()" class="bg-[var(--color-nav-active)] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('obligations')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
 <!-- INSURANCE -->
 <div class="screen" id="screen-insurance">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Insurance Renewals</h2><button onclick="showScreen('insurance-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Policy</button></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Insurance Renewals</h2><button onclick="showScreen('insurance-new')" class="bg-[var(--color-nav-active)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Policy</button></div>
 <div class="grid grid-cols-3 gap-4 mb-6" id="ins-summary"></div>
 <div class="grid grid-cols-2 gap-4" id="ins-cards"></div>
 </div>
@@ -244,13 +247,13 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div><label class="text-sm font-medium text-gray-700">Renewal Date</label><input id="ins-renewal" type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 <div><label class="text-sm font-medium text-gray-700">Coverage (₹)</label><input id="ins-coverage" type="number" placeholder="0" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="saveInsurance()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save Policy</button><button onclick="showScreen('insurance')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveInsurance()" class="bg-[var(--color-nav-active)] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save Policy</button><button onclick="showScreen('insurance')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
 <!-- PROPERTIES -->
 <div class="screen" id="screen-properties">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Properties</h2><button onclick="showScreen('property-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ Add Property</button></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Properties</h2><button onclick="showScreen('property-new')" class="bg-[var(--color-nav-active)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ Add Property</button></div>
 <div class="grid grid-cols-3 gap-4" id="prop-cards"></div>
 </div>
 
@@ -265,13 +268,13 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div><label class="text-sm font-medium text-gray-700">Ownership</label><select id="prop-ownership" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>owned</option><option>rented_out</option><option>leased</option><option>co_owned</option></select></div>
 <div><label class="text-sm font-medium text-gray-700">Society Name</label><input id="prop-society" type="text" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="saveProperty()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('properties')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveProperty()" class="bg-[var(--color-nav-active)] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('properties')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
 <!-- MAINTENANCE -->
 <div class="screen" id="screen-maintenance">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Maintenance & Services</h2><button onclick="showScreen('maintenance-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Record</button></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Maintenance & Services</h2><button onclick="showScreen('maintenance-new')" class="bg-[var(--color-nav-active)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Record</button></div>
 <div class="grid grid-cols-4 gap-4 mb-6" id="maint-summary"></div>
 <div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Due</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th></tr></thead><tbody id="maint-tbody"></tbody></table></div>
 </div>
@@ -288,13 +291,13 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div><label class="text-sm font-medium text-gray-700">Next Due</label><input id="maint-next" type="date" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 <div><label class="text-sm font-medium text-gray-700">Frequency</label><select id="maint-freq" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>one_time</option><option>monthly</option><option>quarterly</option><option>half_yearly</option><option>yearly</option></select></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="saveMaintenance()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('maintenance')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveMaintenance()" class="bg-[var(--color-nav-active)] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('maintenance')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
 <!-- HEALTH -->
 <div class="screen" id="screen-health">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Health Management</h2><button onclick="resetHealthForm()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Entry</button></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Health Management</h2><button onclick="resetHealthForm()" class="bg-[var(--color-nav-active)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ New Entry</button></div>
 <div class="grid grid-cols-4 gap-4" id="health-cards"></div>
 </div>
 
@@ -308,13 +311,13 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div><label class="text-sm font-medium text-gray-700">Blood Group</label><input id="health-blood" type="text" placeholder="e.g. A+" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 <div><label class="text-sm font-medium text-gray-700">Allergies</label><input id="health-allergies" type="text" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="saveHealth()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('health')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="saveHealth()" class="bg-[var(--color-nav-active)] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Save</button><button onclick="showScreen('health')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
 <!-- DOCUMENTS -->
 <div class="screen" id="screen-documents">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Document Vault</h2><button onclick="showScreen('document-new')" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ Upload</button></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Document Vault</h2><button onclick="showScreen('document-new')" class="bg-[var(--color-nav-active)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ Upload</button></div>
 <div class="grid grid-cols-4 gap-4 mb-6" id="doc-summary"></div>
 <div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th><th class="px-4 py-3"></th></tr></thead><tbody id="doc-tbody"></tbody></table></div>
 </div>
@@ -328,7 +331,7 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div><label class="text-sm font-medium text-gray-700">Category</label><select id="doc-category" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"><option>insurance</option><option>property</option><option>identity</option><option>medical</option><option>tax</option><option>bank</option><option>warranty</option><option>receipt</option></select></div>
 <div class="col-span-2"><label class="text-sm font-medium text-gray-700">File</label><input id="doc-file" type="file" class="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm"></div>
 </div>
-<div class="flex gap-3 mt-6"><button onclick="uploadDocument()" class="bg-[#1a5276] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Upload</button><button onclick="showScreen('documents')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
+<div class="flex gap-3 mt-6"><button onclick="uploadDocument()" class="bg-[var(--color-nav-active)] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0d2745]">Upload</button><button onclick="showScreen('documents')" class="border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button></div>
 </div>
 </div>
 
@@ -372,7 +375,7 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div class="card bg-white rounded-xl p-6 mb-4">
   <div class="flex items-center justify-between mb-4">
     <h3 class="font-semibold text-gray-800">Recent Voice Calls</h3>
-    <button onclick="loadRecordings()" class="bg-[#1a5276] text-white px-3 py-1.5 rounded-lg text-sm hover:bg-[#15406a]">↻ Refresh</button>
+    <button onclick="loadRecordings()" class="bg-[var(--color-nav-active)] text-white px-3 py-1.5 rounded-lg text-sm hover:bg-[#15406a]">↻ Refresh</button>
   </div>
   <p class="text-sm text-gray-500 mb-4">Recordings and transcripts from your Dograh Cloud voice agent calls.</p>
   <div id="recordings-list" class="space-y-3">
@@ -384,13 +387,13 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
 <div class="screen" id="screen-settings">
 <h2 class="text-xl font-semibold text-gray-800 mb-6">Settings</h2>
 <div class="grid grid-cols-2 gap-6">
-<div class="card bg-white rounded-xl p-6"><h3 class="font-semibold text-gray-800 mb-4">Profile</h3><div class="space-y-3"><div><label class="text-sm font-medium text-gray-700">Name</label><input id="set-name" type="text" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><div><label class="text-sm font-medium text-gray-700">Phone</label><input id="set-phone" type="tel" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><button onclick="updateProfile()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm mt-2">Update Profile</button></div></div>
-<div class="card bg-white rounded-xl p-6"><h3 class="font-semibold text-gray-800 mb-4">Security</h3><div class="space-y-3"><div><label class="text-sm font-medium text-gray-700">Current Password</label><input id="set-old-pass" type="password" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><div><label class="text-sm font-medium text-gray-700">New Password</label><input id="set-new-pass" type="password" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><button onclick="changePassword()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm">Change Password</button></div></div>
+<div class="card bg-white rounded-xl p-6"><h3 class="font-semibold text-gray-800 mb-4">Profile</h3><div class="space-y-3"><div><label class="text-sm font-medium text-gray-700">Name</label><input id="set-name" type="text" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><div><label class="text-sm font-medium text-gray-700">Phone</label><input id="set-phone" type="tel" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><button onclick="updateProfile()" class="bg-[var(--color-nav-active)] text-white px-4 py-2 rounded-lg text-sm mt-2">Update Profile</button></div></div>
+<div class="card bg-white rounded-xl p-6"><h3 class="font-semibold text-gray-800 mb-4">Security</h3><div class="space-y-3"><div><label class="text-sm font-medium text-gray-700">Current Password</label><input id="set-old-pass" type="password" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><div><label class="text-sm font-medium text-gray-700">New Password</label><input id="set-new-pass" type="password" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg text-sm"></div><button onclick="changePassword()" class="bg-[var(--color-nav-active)] text-white px-4 py-2 rounded-lg text-sm">Change Password</button></div></div>
 </div>
 </div>
 
 <div class="screen" id="screen-users">
-<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Users</h2><button onclick="openUserModal()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ Add User</button></div>
+<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-800">Users</h2><button onclick="openUserModal()" class="bg-[var(--color-nav-active)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0d2745]">+ Add User</button></div>
 <div class="card bg-white rounded-xl overflow-hidden"><table class="w-full"><thead><tr class="bg-gray-50"><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th></tr></thead><tbody id="users-tbody"></tbody></table></div>
 <div id="user-modal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
   <div class="bg-white rounded-xl p-6 w-full max-w-md">
@@ -404,7 +407,7 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
     </div>
     <div class="flex justify-end gap-2 mt-5">
       <button onclick="closeUserModal()" class="px-4 py-2 rounded-lg text-sm border border-gray-300 text-gray-600 hover:bg-gray-50">Cancel</button>
-      <button onclick="saveUser()" class="bg-[#1a5276] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0d2745]">Save</button>
+      <button onclick="saveUser()" class="bg-[var(--color-nav-active)] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0d2745]">Save</button>
     </div>
   </div>
 </div>
@@ -420,8 +423,8 @@ elevenlabs-convai{position:fixed!important;bottom:96px!important;right:24px!impo
     agent-id="agent_8501kz6z46j5feqvy2mj4az3e0rr"
     variant="expanded"
     dismissible="true"
-    avatar-orb-color-1="#1a5276"
-    avatar-orb-color-2="#3498db"
+    avatar-orb-color-1="var(--color-nav-active)"
+    avatar-orb-color-2="var(--color-primary)"
     action-text="Talk to LifeOS"
     start-call-text="Start Conversation"
     end-call-text="End Call"
@@ -590,12 +593,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- ═══ CONVERSO SELF-HOSTED VOICE WIDGET (custom blue button removed — keeping Dograh green button) ═══ -->
 <!-- Custom blue circular button commented out — Dograh Cloud green "Talk to Agent" button is the only widget
 <style>
-#converso-voice-btn{position:fixed;bottom:24px;right:24px;z-index:999;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#1a5276,#3498db);border:none;cursor:pointer;box-shadow:0 4px 20px rgba(26,82,118,0.4);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;animation:pulse 2s infinite}
+#converso-voice-btn{position:fixed;bottom:24px;right:24px;z-index:999;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--color-nav-active),var(--color-primary));border:none;cursor:pointer;box-shadow:0 4px 20px rgba(26,82,118,0.4);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;animation:pulse 2s infinite}
 #converso-voice-btn:hover{transform:scale(1.1);box-shadow:0 6px 25px rgba(26,82,118,0.5)}
 #converso-voice-btn svg{width:28px;height:28px;fill:#fff}
 @keyframes pulse{0%{box-shadow:0 4px 20px rgba(26,82,118,0.4),0 0 0 0 rgba(52,152,219,0.4)}70%{box-shadow:0 4px 20px rgba(26,82,118,0.4),0 0 0 15px rgba(52,152,219,0)}100%{box-shadow:0 4px 20px rgba(26,82,118,0.4),0 0 0 0 rgba(52,152,219,0)}}
-#converso-voice-label{position:fixed;bottom:30px;right:100px;z-index:999;background:#0d2745;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-family:Inter,sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:none}
-#converso-voice-status{position:fixed;bottom:90px;right:24px;z-index:999;background:#0d2745;color:#3498db;padding:6px 12px;border-radius:6px;font-size:12px;font-family:Inter,sans-serif;display:none}
+#converso-voice-label{position:fixed;bottom:30px;right:100px;z-index:999;background:var(--color-nav);color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-family:Inter,sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:none}
+#converso-voice-status{position:fixed;bottom:90px;right:24px;z-index:999;background:var(--color-nav);color:var(--color-primary);padding:6px 12px;border-radius:6px;font-size:12px;font-family:Inter,sans-serif;display:none}
 </style>
 <div id="converso-voice-label">Talk to LifeOS Assistant</div>
 <div id="converso-voice-status">Connecting...</div>
@@ -1100,7 +1103,7 @@ async function toggleHealthRecords(pid) {
   _openRecords[pid] = true;
   const recs = await apiCall('/health/profiles/'+pid+'/records');
   const rows = recs.length ? recs.map(r => `<div class="flex justify-between items-start gap-2 py-2 border-b border-gray-50 last:border-0"><div><p class="text-sm font-medium text-gray-800">${r.entry_type.replace(/_/g,' ')} — ${fmtDate(r.date)}</p>${r.doctor?'<p class="text-xs text-gray-500">Dr. '+r.doctor+(r.hospital? ', '+r.hospital:'')+'</p>':''}${r.diagnosis?'<p class="text-xs text-gray-500">'+r.diagnosis+'</p>':''}${r.medications?'<p class="text-xs text-gray-500">💊 '+r.medications+'</p>':''}${r.next_appointment?'<p class="text-xs text-orange-500">Next appointment: '+fmtDate(r.next_appointment)+'</p>':''}</div><div class="whitespace-nowrap"><button onclick="editHealthRecord(${r.id}, ${pid})" class="text-gray-500 text-xs hover:underline mr-2">Edit</button><button onclick="deleteHealthRecord(${r.id}, ${pid})" class="text-red-500 text-xs hover:underline">Delete</button></div></div>`).join('') : '<p class="text-xs text-gray-400 py-2">No records yet.</p>';
-  document.getElementById('health-records-'+pid).innerHTML = '<div class="flex justify-between items-center mb-1"><span class="text-sm font-medium text-gray-700">📋 Medical Records</span><button onclick="openRecordForm('+pid+')" class="text-blue-600 text-xs hover:underline">+ Add Record</button></div>' + rows + '<div id="record-form-'+pid+'" class="hidden mt-2 space-y-2 bg-gray-50 rounded-lg p-3"><input id="rec-type-'+pid+'" placeholder="Type (doctor_visit, prescription, lab_test, vaccination...)" class="w-full px-3 py-2 border border-gray-200 rounded text-xs"><div class="grid grid-cols-2 gap-2"><input id="rec-date-'+pid+'" type="date" class="px-3 py-2 border border-gray-200 rounded text-xs"><input id="rec-appt-'+pid+'" type="date" placeholder="Next appointment" class="px-3 py-2 border border-gray-200 rounded text-xs"></div><div class="grid grid-cols-2 gap-2"><input id="rec-doctor-'+pid+'" placeholder="Doctor" class="px-3 py-2 border border-gray-200 rounded text-xs"><input id="rec-hospital-'+pid+'" placeholder="Hospital" class="px-3 py-2 border border-gray-200 rounded text-xs"></div><input id="rec-diagnosis-'+pid+'" placeholder="Diagnosis" class="w-full px-3 py-2 border border-gray-200 rounded text-xs"><input id="rec-meds-'+pid+'" placeholder="Medications" class="w-full px-3 py-2 border border-gray-200 rounded text-xs"><div class="flex gap-2"><button onclick="saveHealthRecord('+pid+')" class="bg-[#1a5276] text-white px-3 py-1.5 rounded text-xs">Save Record</button><button onclick="document.getElementById(\'record-form-'+pid+'\').classList.add(\'hidden\')" class="border border-gray-200 px-3 py-1.5 rounded text-xs text-gray-500">Cancel</button></div></div>';
+  document.getElementById('health-records-'+pid).innerHTML = '<div class="flex justify-between items-center mb-1"><span class="text-sm font-medium text-gray-700">📋 Medical Records</span><button onclick="openRecordForm('+pid+')" class="text-blue-600 text-xs hover:underline">+ Add Record</button></div>' + rows + '<div id="record-form-'+pid+'" class="hidden mt-2 space-y-2 bg-gray-50 rounded-lg p-3"><input id="rec-type-'+pid+'" placeholder="Type (doctor_visit, prescription, lab_test, vaccination...)" class="w-full px-3 py-2 border border-gray-200 rounded text-xs"><div class="grid grid-cols-2 gap-2"><input id="rec-date-'+pid+'" type="date" class="px-3 py-2 border border-gray-200 rounded text-xs"><input id="rec-appt-'+pid+'" type="date" placeholder="Next appointment" class="px-3 py-2 border border-gray-200 rounded text-xs"></div><div class="grid grid-cols-2 gap-2"><input id="rec-doctor-'+pid+'" placeholder="Doctor" class="px-3 py-2 border border-gray-200 rounded text-xs"><input id="rec-hospital-'+pid+'" placeholder="Hospital" class="px-3 py-2 border border-gray-200 rounded text-xs"></div><input id="rec-diagnosis-'+pid+'" placeholder="Diagnosis" class="w-full px-3 py-2 border border-gray-200 rounded text-xs"><input id="rec-meds-'+pid+'" placeholder="Medications" class="w-full px-3 py-2 border border-gray-200 rounded text-xs"><div class="flex gap-2"><button onclick="saveHealthRecord('+pid+')" class="bg-[var(--color-nav-active)] text-white px-3 py-1.5 rounded text-xs">Save Record</button><button onclick="document.getElementById(\'record-form-'+pid+'\').classList.add(\'hidden\')" class="border border-gray-200 px-3 py-1.5 rounded text-xs text-gray-500">Cancel</button></div></div>';
 }
 let _editRecId = null, _editRecPid = null;
 function openRecordForm(pid) { _editRecId = null; _editRecPid = pid; document.getElementById('record-form-'+pid).classList.remove('hidden'); ['rec-type','rec-date','rec-appt','rec-doctor','rec-hospital','rec-diagnosis','rec-meds'].forEach(p => { const el = document.getElementById(p+'-'+pid); if (el.tagName==='INPUT' && el.type!=='date') el.value=''; else if(el.type!=='date') el.value=''; }); }
@@ -1228,9 +1231,9 @@ async function loadReports() {
     document.getElementById('report-tbody').innerHTML = cats.length ? cats.map(c => '<tr class="border-b border-gray-100"><td class="px-4 py-2 text-sm">'+c.category+'</td><td class="px-4 py-2 text-sm font-medium">'+fmtMoney(c.amount)+'</td></tr>').join('') : '<tr><td colspan="2" class="empty-state">No spending data for this period</td></tr>';
     // Charts
     const c3 = document.getElementById('chart-category');
-    if (c3) { if (c3._chart) c3._chart.destroy(); c3._chart = new Chart(c3,{type:'doughnut',data:{labels:cats.map(c=>c.category),datasets:[{data:cats.map(c=>c.amount),backgroundColor:['#f39c12','#3498db','#e74c3c','#27ae60','#95a5a6','#9b59b6']}],},options:{responsive:true,plugins:{legend:{position:'right'}}}}); }
+    if (c3) { if (c3._chart) c3._chart.destroy(); c3._chart = new Chart(c3,{type:'doughnut',data:{labels:cats.map(c=>c.category),datasets:[{data:cats.map(c=>c.amount),backgroundColor:['#f39c12','var(--color-primary)','#e74c3c','#27ae60','#95a5a6','#9b59b6']}],},options:{responsive:true,plugins:{legend:{position:'right'}}}}); }
     const c4 = document.getElementById('chart-trend');
-    if (c4) { const trend = data.monthly_trend||[]; if (c4._chart) c4._chart.destroy(); c4._chart = new Chart(c4,{type:'line',data:{labels:trend.map(t=>t.month),datasets:[{label:'Spending',data:trend.map(t=>t.amount),borderColor:'#1a5276',backgroundColor:'rgba(26,82,118,0.1)',fill:true}]},options:{responsive:true,plugins:{legend:{display:false}}}}); }
+    if (c4) { const trend = data.monthly_trend||[]; if (c4._chart) c4._chart.destroy(); c4._chart = new Chart(c4,{type:'line',data:{labels:trend.map(t=>t.month),datasets:[{label:'Spending',data:trend.map(t=>t.amount),borderColor:'var(--color-nav-active)',backgroundColor:'rgba(26,82,118,0.1)',fill:true}]},options:{responsive:true,plugins:{legend:{display:false}}}}); }
   } catch(e) { toast(e.message,'error'); }
 }
 
@@ -1276,8 +1279,8 @@ async function loadRecordings() {
           '<span class="badge-paid text-xs px-2 py-1 rounded-full">Completed</span>' +
         '</div>' +
         '<div class="flex gap-2 mt-3">' +
-          (recUrl ? '<a href="' + recUrl + '" target="_blank" class="text-xs bg-[#1a5276] text-white px-3 py-1.5 rounded-lg hover:bg-[#15406a]">🎧 Download Audio</a>' : '<span class="text-xs text-gray-400 px-3 py-1.5">No audio</span>') +
-          (transUrl ? '<a href="' + transUrl + '" target="_blank" class="text-xs bg-[#3498db] text-white px-3 py-1.5 rounded-lg hover:bg-[#2980b9]">📝 View Transcript</a>' : '<span class="text-xs text-gray-400 px-3 py-1.5">No transcript</span>') +
+          (recUrl ? '<a href="' + recUrl + '" target="_blank" class="text-xs bg-[var(--color-nav-active)] text-white px-3 py-1.5 rounded-lg hover:bg-[#15406a]">🎧 Download Audio</a>' : '<span class="text-xs text-gray-400 px-3 py-1.5">No audio</span>') +
+          (transUrl ? '<a href="' + transUrl + '" target="_blank" class="text-xs bg-[var(--color-primary)] text-white px-3 py-1.5 rounded-lg hover:bg-[#2980b9]">📝 View Transcript</a>' : '<span class="text-xs text-gray-400 px-3 py-1.5">No transcript</span>') +
         '</div>' +
       '</div>';
     }).join('');

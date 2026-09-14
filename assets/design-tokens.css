@@ -1,0 +1,82 @@
+/* LifeOS design tokens — ui-ux-pro-max "personal productivity dashboard" system
+   One file controls the whole look. Remove this <link> to roll back. */
+:root {
+  --color-primary: #0D9488;
+  --color-primary-dark: #0F766E;
+  --color-on-primary: #000000;
+  --color-secondary: #14B8A6;
+  --color-accent: #EA580C;
+  --color-accent-dark: #C2410C;
+  --color-background: #F0FDFA;
+  --color-surface: #FFFFFF;
+  --color-foreground: #134E4A;
+  --color-muted: #E8F1F4;
+  --color-muted-foreground: #475569;
+  --color-border: #CCFBF1;
+  --color-destructive: #DC2626;
+  --color-success: #059669;
+  --color-warning: #D97706;
+  --color-info: #0284C7;
+  --color-ring: #0D9488;
+  --color-nav: #0F2E2B;
+  --color-nav-hover: #134E4A;
+  --color-nav-active: #115E59;
+}
+
+/* map legacy flat colors to tokens (body markup untouched) */
+body { background: var(--color-background); color: var(--color-foreground); }
+* { font-family: 'Fira Sans', sans-serif; }
+code, .font-mono, input[type=number] { font-family: 'Fira Code', monospace; }
+
+/* nav sidebar: navy -> deep teal */
+.sidebar-link { transition: all .2s; }
+.sidebar-link:hover { background: var(--color-nav-hover); }
+.sidebar-link.active { background: var(--color-nav-active); border-left: 3px solid var(--color-secondary); }
+[class*="bg-[#0d2745]"], [class*="bg-[#1a5276]"] { background-color: var(--color-nav) !important; }
+[class*="text-[#0d2745]"], [class*="text-[#1a5276]"] { color: var(--color-primary-dark) !important; }
+
+/* cards: unified tokens + focus visibility */
+.card { box-shadow: 0 1px 3px rgba(19,78,74,.08); transition: box-shadow .2s, transform .1s; }
+.card:hover { box-shadow: 0 4px 12px rgba(19,78,74,.14); }
+.card[onclick] { cursor: pointer; }
+.card[onclick]:active { transform: scale(.98); transition: transform .1s; }
+
+/* status badges -> token colors */
+.badge-overdue { background: var(--color-destructive); color: #fff; }
+.badge-due { background: var(--color-warning); color: #fff; }
+.badge-paid { background: var(--color-success); color: #fff; }
+.badge-upcoming { background: var(--color-info, var(--color-secondary)); color: #fff; }
+
+/* tabs */
+.tab-active { border-bottom: 3px solid var(--color-primary); color: var(--color-primary-dark); font-weight: 600; }
+
+/* inputs: visible focus ring (a11y) */
+input, select, textarea { transition: border-color .2s; }
+input:focus, select, textarea:focus { border-color: var(--color-ring); outline: none; box-shadow: 0 0 0 2px rgba(13,148,136,.18); }
+input:focus, select:focus, textarea:focus { outline: 2px solid transparent; }
+a, button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+
+/* touch targets on mobile */
+@media (max-width: 768px) {
+  button, a[class*="bg-"], .doc-btn { min-height: 44px; }
+}
+
+/* reduced motion (a11y) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+.toast { position: fixed; top: 20px; right: 20px; z-index: 999; padding: 12px 20px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(19,78,74,.18); animation: slideIn .3s ease; }
+
+/* legacy tailwind arbitrary classes -> tokens */
+.bg-\[\#0d2745\] { background-color: var(--color-nav) !important; }
+.bg-\[\#1a5276\] { background-color: var(--color-nav-active) !important; }
+.bg-\[\#f0f2f5\] { background-color: var(--color-background) !important; }
+.hover\:bg-\[\#0d2745\]:hover { background-color: var(--color-nav-hover) !important; }
+.from-\[\#0d2745\] { --tw-gradient-from: var(--color-nav); }
+.toast-success { background: var(--color-success); color: #fff; }
+.toast-error { background: var(--color-destructive); color: #fff; }
+.toast-info { background: var(--color-primary); color: #fff; }
