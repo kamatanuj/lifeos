@@ -19,6 +19,7 @@
   --color-info: #0284C7;
   --color-ring: #0D9488;
   --color-nav: #0F2E2B;
+  --color-nav-link: #FBBF24; /* trial golden-yellow nav labels */
   --color-nav-hover: #134E4A;
   --color-nav-active: #115E59;
 }
@@ -80,3 +81,6 @@ a, button { cursor: pointer; }
 .toast-success { background: var(--color-success); color: #fff; }
 .toast-error { background: var(--color-destructive); color: #fff; }
 .toast-info { background: var(--color-primary); color: #fff; }
+/* trial: golden-yellow nav item text (section headings untouched) */
+.sidebar-link { color: var(--color-nav-link); }
+.sidebar-link.active { color: #fff; }

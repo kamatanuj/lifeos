@@ -1,7 +1,7 @@
 LifeOS Local Agent — migration complete 2026-09-09
 ====================================================
 - Local Converso workflow: id=1 "LifeOS Voice Agent (Local)", published v2 (definition = copy of cloud wf 10786)
-- BYOK override (workflow-level, org default untouched): LLM=openai/glm-5.3-flash @ https://ollama.com/v1, STT=deepgram nova-3-general/multi, TTS=elevenlabs eleven_flash_v2_5 (voice Roger CwhRBWXzGAHq8TQ4Fs17)
+- CORRECTED 2026-09-11: published v5 (09-10 07:24) switched mode BYOK -> DOGRAH. Current: mode=dograh, api_key=mps_sk_yAlk...BLZWtJ, voice=dg_voice_b431dce61697bc3ba98d (Kiara, Dograh default voice), LLM = Dograh default (routed via services.dograh.com/api/v1/llm). NO glm-5.3-flash / Deepgram / ElevenLabs config is active anymore. The BYOK pipeline (glm-5.3-flash @ ollama.com/v1 + ElevenLabs Roger + Deepgram nova-3) lives only in archived v4.
 - Embed token: emb_mxy89WFE8Dgj2CBRUEFm... (full: migration/local_embed_token.txt), resolves via https://converso.work/api/v1/public/embed/config/<token>
 - Tools: 10 http_api tools inserted into local DB with EXACT cloud tool_uuids (org 1, user 1); created_at/updated_at must be non-NULL (fixed via UPDATE now())
 - Dashboard: /var/www/lifeos/index.html (synced to /root/lifeos-prototype/index.html) — teal "L" button calls startLocalVoice() → injects dograh-widget.js with local token + apiEndpoint=converso.work; cloud green button untouched

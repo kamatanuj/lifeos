@@ -231,6 +231,10 @@ class DocumentResponse(DocumentBase):
     file_size: Optional[int] = None
     mime_type: Optional[str] = None
     uploaded_at: datetime
+    summary_text: Optional[str] = None
+    extracted_payments: Optional[list] = None
+    extraction_method: Optional[str] = None
+    processed_at: Optional[datetime] = None
     class Config:
         from_attributes = True
 

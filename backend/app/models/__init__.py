@@ -300,9 +300,25 @@ class Document(Base):
     tags = Column(JSON, default=list)
     expiry_date = Column(Date, nullable=True)
     notes = Column(Text, nullable=True)
+    summary_text = Column(Text, nullable=True)
+    extracted_payments = Column(JSON, nullable=True)
+    extraction_method = Column(String(20), nullable=True)
+    processed_at = Column(DateTime, nullable=True)
+    content_hash = Column(String(64), nullable=True)
+    extracted_text = Column(Text, nullable=True)
     uploaded_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="documents")
+
+
+class DocumentChat(Base):
+    __tablename__ = "document_chats"
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String(10), nullable=False)  # user | assistant
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class Notification(Base):

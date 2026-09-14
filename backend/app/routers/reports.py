@@ -39,7 +39,7 @@ def reports_summary(period: str = None, db: Session = Depends(get_db), user: Use
 
     total_spending = sum(spending.values())
 
-    # Monthly trend (6 months)
+    # Monthly trend (6 months) — bills + obligations + maintenance (actual payments only)
     trend = []
     for i in range(5, -1, -1):
         m = month - i
@@ -51,6 +51,12 @@ def reports_summary(period: str = None, db: Session = Depends(get_db), user: Use
         for b in bills:
             if b.paid_date and b.paid_date.year == y and b.paid_date.month == m:
                 month_total += b.paid_amount or b.amount
+        for o in obligations:
+            if o.last_paid_date and o.last_paid_date.year == y and o.last_paid_date.month == m:
+                month_total += o.amount
+        for rec in maintenance:
+            if rec.date_completed and rec.date_completed.year == y and rec.date_completed.month == m:
+                month_total += rec.cost or 0
         trend.append({"month": f"{y}-{m:02d}", "amount": month_total})
 
     return {
