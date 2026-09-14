@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LifeOS — Personal Management Dashboard</title>
 <link rel="stylesheet" href="assets/design-tokens.css">
+<script>
+function chartColor(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim()||'#0D9488';}
+const CHART_COLORS=()=>({warn:chartColor('--color-warning'),prim:chartColor('--color-primary'),bad:chartColor('--color-destructive'),ok:chartColor('--color-success'),line:chartColor('--color-nav-active')});
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="assets/tailwind.js"></script>
 <script src="assets/chart.js"></script>
